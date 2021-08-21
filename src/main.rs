@@ -50,6 +50,14 @@ struct Cli {
     )]
     // state file for checkpoints/backups
     state_file: String,
+    #[structopt(
+        name = "geodb-file",
+        default_value = "db/GeoLite2-City.mmdb",
+        short,
+        help = "maxmind city db file"
+    )]
+    // state file for checkpoints/backups
+    db_file: String,
 }
 
 async fn run() -> anyhow::Result<()> {
@@ -84,6 +92,11 @@ async fn run() -> anyhow::Result<()> {
         state.clone(),
         chrono::Duration::seconds(5),
         cli.state_file,
+    )));
+    tasks.push(tokio::task::spawn(tasks::geo_filler::run(
+        state.clone(),
+        chrono::Duration::seconds(5),
+        cli.db_file,
     )));
     // TODO - respawn failed tasks
     let returns = futures::future::join_all(tasks).await;

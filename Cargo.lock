@@ -212,6 +212,7 @@ dependencies = [
  "env_logger",
  "futures",
  "log",
+ "maxminddb",
  "reqwest",
  "serde",
  "serde_json",
@@ -852,6 +853,17 @@ name = "matches"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3e378b66a060d48947b590737b30a1be76706c8dd7b8ba0f2fe3989c68a853f"
+
+[[package]]
+name = "maxminddb"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a2af4902d7569c441449f2315cb83598917b13275209529103e10c238fcf3db"
+dependencies = [
+ "log",
+ "memchr",
+ "serde",
+]
 
 [[package]]
 name = "memchr"

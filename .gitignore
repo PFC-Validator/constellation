@@ -1,3 +1,4 @@
 /target
 /.idea
 /state.json
+/db/GeoLite2-City.mmdb

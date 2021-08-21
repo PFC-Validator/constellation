@@ -2,7 +2,7 @@ use crate::errors::ConstellationError::BadIp;
 use crate::state::{AppState, IpAsnMapping, ASN};
 use chrono::prelude::*;
 use chrono::Duration;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use tokio::time::sleep;
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use trust_dns_resolver::TokioAsyncResolver;
@@ -17,7 +17,7 @@ pub async fn run(state: AppState, period: Duration) -> anyhow::Result<()> {
         let mut work_asn: HashMap<String, ASN>;
         {
             let the_state = state.lock().unwrap();
-            for ip in &the_state.new_ips {
+            for ip in &the_state.new_ips_bgp {
                 if !the_state.ip_asn.contains_key(ip) {
                     ips_tbd.push(ip.to_string());
                 }
@@ -26,6 +26,7 @@ pub async fn run(state: AppState, period: Duration) -> anyhow::Result<()> {
         }
         if !ips_tbd.is_empty() {
             {
+                log::info!("New IPS = {}", ips_tbd.len());
                 for ip in ips_tbd {
                     match grab_asn_for_ip(resolver, &ip).await {
                         Ok(ip_asn_det) => match ip_asn_det {
@@ -36,7 +37,9 @@ pub async fn run(state: AppState, period: Duration) -> anyhow::Result<()> {
                                     match grab_asn_details(resolver, &det.asn).await {
                                         Ok(asn_det) => match asn_det {
                                             Some(a) => {
-                                                work_asn.insert(det.asn.clone(), a);
+                                                let mut the_state = state.lock().unwrap();
+                                                work_asn.insert(det.asn.clone(), a.clone());
+                                                the_state.asn.insert(det.asn.clone(), a);
                                             }
                                             None => {
                                                 log::info!("ASN - no response {}", &det.asn);
@@ -51,6 +54,23 @@ pub async fn run(state: AppState, period: Duration) -> anyhow::Result<()> {
                                         }
                                     };
                                 }
+                                {
+                                    let mut the_state = state.lock().unwrap();
+                                    the_state.ip_asn.insert(ip.clone(), det.clone());
+                                    the_state.new_ips_bgp.remove(&ip);
+                                    match the_state.asn_ip.get(&det.asn) {
+                                        Some(set) => {
+                                            let mut new_set = set.clone();
+                                            new_set.insert(ip);
+                                            the_state.asn_ip.insert(det.asn, new_set.clone());
+                                        }
+                                        None => {
+                                            let mut set: HashSet<String> = HashSet::new();
+                                            set.insert(ip);
+                                            the_state.asn_ip.insert(det.asn, set.clone());
+                                        }
+                                    }
+                                }
                             }
                             None => {
                                 log::info!("Filled in IP {} - no response", ip);
@@ -62,22 +82,7 @@ pub async fn run(state: AppState, period: Duration) -> anyhow::Result<()> {
                     }
                 }
             }
-            if !work_ip_asn.is_empty() {
-                let mut the_state_2 = state.lock().unwrap();
-                for (ip, ip_asn) in work_ip_asn {
-                    log::info!("New IP {} - {:#?}", ip, &ip_asn);
-                    the_state_2.ip_asn.insert(ip.clone(), ip_asn);
-                    the_state_2.new_ips.remove(&ip);
-                }
-                for (asn, asn_det) in work_asn {
-                    log::info!("New ASN {} - {:#?}", asn, &asn_det);
-                    if !the_state_2.asn.contains_key(&asn) {
-                        the_state_2.asn.insert(asn.clone(), asn_det);
-                    }
-                }
-            } else {
-                log::info!("No resolutions")
-            }
+
             let now = Utc::now();
             let spent = now - start;
             if period - spent > Duration::seconds(1) {
@@ -109,14 +114,19 @@ async fn grab_asn_for_ip(
         Ok(match dns_resolve_txt(resolver, &hostname).await? {
             Some(ip_asn_mapping) => {
                 let bits = ip_asn_mapping.split("|").collect::<Vec<_>>();
+                let asn_num = bits[0].trim().split(" ").collect::<Vec<&str>>();
                 Some(IpAsnMapping {
-                    asn: bits[0].trim().to_string(),
+                    asn: asn_num[0].trim().to_string(),
                     range: bits[1].trim().to_string(),
                     country: bits[2].trim().to_string(),
                     network: bits[3].trim().to_string(),
+                    last_updated: Utc::now(),
                 })
             }
-            None => None,
+            None => {
+                log::info!("Unable to resolve {} via {}", ip, hostname);
+                None
+            }
         })
     } else {
         Err(BadIp(ip.to_string()).into())
@@ -135,9 +145,13 @@ async fn grab_asn_details(resolver: &TokioAsyncResolver, asn: &str) -> anyhow::R
                 country: bits[1].trim().to_string(),
                 net: bits[2].trim().to_string(),
                 desc: bits[3].trim().to_string(),
+                last_updated: Utc::now(),
             })
         }
-        None => None,
+        None => {
+            log::info!("Unable to resolve AS{} via {}", asn, hostname);
+            None
+        }
     })
 }
 async fn dns_resolve_txt(
