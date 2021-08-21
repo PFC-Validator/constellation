@@ -3,8 +3,9 @@ mod state;
 mod tasks;
 
 use crate::state::{AppState, State, StateVersion};
+use actix_web::dev::Server;
 use dotenv::dotenv;
-use std::sync::{Arc, Mutex};
+use std::sync::{mpsc, Arc, Mutex};
 use structopt::StructOpt;
 use tokio::task::JoinHandle;
 
@@ -78,6 +79,7 @@ async fn run() -> anyhow::Result<()> {
     };
     let state: AppState = Arc::new(Mutex::new(state_data));
     let mut tasks: Vec<JoinHandle<anyhow::Result<()>>> = vec![];
+    let (tx, rx) = mpsc::channel::<Server>();
 
     tasks.push(tokio::task::spawn(tasks::address_book::run(
         state.clone(),
@@ -98,6 +100,7 @@ async fn run() -> anyhow::Result<()> {
         chrono::Duration::seconds(5),
         cli.db_file,
     )));
+    tasks.push(tokio::task::spawn(tasks::web::run(state.clone(), tx)));
     // TODO - respawn failed tasks
     let returns = futures::future::join_all(tasks).await;
     returns

@@ -144,7 +144,7 @@ async fn grab_asn_details(resolver: &TokioAsyncResolver, asn: &str) -> anyhow::R
 
                 country: bits[1].trim().to_string(),
                 net: bits[2].trim().to_string(),
-                desc: bits[3].trim().to_string(),
+                desc: bits[4].trim().to_string(),
                 last_updated: Utc::now(),
             })
         }
