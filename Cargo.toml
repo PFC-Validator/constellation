@@ -2,7 +2,9 @@
 name = "constellation"
 version = "0.1.0"
 edition = "2018"
-
+license = "Apache-2.0"
+description="Constellation oversees all the plants and things in the cosmos to ensure we can moon"
+readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["native-tls"]
