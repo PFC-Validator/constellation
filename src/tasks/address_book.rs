@@ -3,6 +3,7 @@ use chrono::prelude::*;
 use chrono::Duration;
 use terra_rust_api::AddressBook;
 
+use std::collections::HashSet;
 use tokio::time::sleep;
 
 pub async fn run(
@@ -22,6 +23,23 @@ pub async fn run(
                         nodes.new_ips_bgp.insert(entry.addr.ip.clone());
                         nodes.new_ips_geo.insert(entry.addr.ip.clone());
                     }
+
+                    let mut s = match nodes.id_ip_addr.get(&entry.addr.id) {
+                        Some(set) => set.clone(),
+                        None => HashSet::new(),
+                    };
+                    s.insert(entry.addr.clone());
+                    nodes
+                        .id_ip_addr
+                        .insert((&entry.addr.id.clone()).to_string(), s);
+                    let mut s = match nodes.ip_ip_addr.get(&entry.addr.ip) {
+                        Some(set) => set.clone(),
+                        None => HashSet::new(),
+                    };
+                    s.insert(entry.addr.clone());
+                    nodes
+                        .ip_ip_addr
+                        .insert((&entry.addr.ip.clone()).to_string(), s);
                 })
             }
             Err(e) => {

@@ -1,4 +1,4 @@
-use crate::state::{AppState, GeoCity, GeoContinent, GeoCountry, GeoID, ASN};
+use crate::state::{AppState, GeoCity, GeoContinent, GeoCountry, GeoID, IpAsnMapping, ASN};
 use actix_web::dev::Server;
 use actix_web::{
     middleware, rt, web, App, Error as AWError, HttpRequest, HttpResponse, HttpServer,
@@ -7,6 +7,7 @@ use actix_web::{
 use serde::Serialize;
 use std::collections::HashSet;
 use std::sync::mpsc;
+use terra_rust_api::addressbook::{NodeAddr, NodeIDIPPort};
 
 pub async fn run(state: AppState, tx: mpsc::Sender<Server>) -> anyhow::Result<()> {
     let mut sys = rt::System::new("test");
@@ -25,6 +26,11 @@ pub async fn run(state: AppState, tx: mpsc::Sender<Server>) -> anyhow::Result<()
             .service(web::resource("/continent/{id:\\d+}").route(web::get().to(continent_detail)))
             .service(web::resource("/asn").route(web::get().to(asns)))
             .service(web::resource("/asn/{asn:\\d+}").route(web::get().to(asn_detail)))
+            .service(web::resource("/node").route(web::get().to(nodes)))
+            .service(web::resource("/node/{node:\\w+}").route(web::get().to(node_detail)))
+            .service(
+                web::resource("/ip/{ip:\\d+\\.\\d+\\.\\d+\\.\\d+}").route(web::get().to(ip_detail)),
+            )
     })
     .bind("127.0.0.1:8080")?
     .run();
@@ -125,5 +131,106 @@ async fn asn_detail(req: HttpRequest) -> Result<HttpResponse, AWError> {
             Ok(HttpResponse::Ok().json(ASNDetail { asn, ip: asn_ip }))
         }
         Err(_e) => Ok(HttpResponse::NotAcceptable().body("bad asn")),
+    }
+}
+
+async fn nodes(req: HttpRequest) -> Result<HttpResponse, AWError> {
+    let r = req.app_data::<AppState>().unwrap().lock().unwrap();
+    Ok(HttpResponse::Ok().json(&r.nodes))
+}
+
+#[derive(Serialize)]
+struct NodeDetail {
+    id: String,
+    id_ip_port: HashSet<NodeIDIPPort>,
+    nodes: Vec<NodeAddr>,
+}
+async fn node_detail(req: HttpRequest) -> Result<HttpResponse, AWError> {
+    match req
+        .match_info()
+        .get("node")
+        .unwrap_or("0")
+        .parse::<String>()
+    {
+        Ok(node) => {
+            let r = req.app_data::<AppState>().unwrap().lock().unwrap();
+            let empty: HashSet<NodeIDIPPort> = HashSet::new();
+            let id_ip_port = r.id_ip_addr.get(&node).unwrap_or(&empty);
+            let mut nodes: Vec<NodeAddr> = vec![];
+            id_ip_port
+                .iter()
+                .for_each(|f| match r.nodes.get(&f.to_string()) {
+                    Some(n) => nodes.push(n.clone()),
+                    None => {}
+                });
+            Ok(HttpResponse::Ok().json(NodeDetail {
+                id: node,
+                id_ip_port: id_ip_port.clone(),
+                nodes,
+            }))
+        }
+        Err(_e) => Ok(HttpResponse::NotAcceptable().body("bad id")),
+    }
+}
+
+#[derive(Serialize)]
+struct IPDetail {
+    ip: String,
+    ip_id_port: HashSet<NodeIDIPPort>,
+    nodes: Vec<NodeAddr>,
+    asn_ip: Option<IpAsnMapping>,
+    asn: Option<ASN>,
+    city: Option<GeoCity>,
+    country: Option<GeoCountry>,
+    continent: Option<GeoContinent>,
+}
+async fn ip_detail(req: HttpRequest) -> Result<HttpResponse, AWError> {
+    match req.match_info().get("ip").unwrap_or("0").parse::<String>() {
+        Ok(ip) => {
+            let r = req.app_data::<AppState>().unwrap().lock().unwrap();
+
+            let empty: HashSet<NodeIDIPPort> = HashSet::new();
+            let ip_id_port = r.ip_ip_addr.get(&ip).unwrap_or(&empty);
+            let mut nodes: Vec<NodeAddr> = vec![];
+            ip_id_port
+                .iter()
+                .for_each(|f| match r.nodes.get(&f.to_string()) {
+                    Some(n) => nodes.push(n.clone()),
+                    None => {}
+                });
+            let city = match r.geo_ip_city.get(&ip) {
+                Some(geoid) => r.geo_city.get(geoid),
+                None => None,
+            }
+            .map(|f| f.clone());
+            let country = match r.geo_ip_country.get(&ip) {
+                Some(geoid) => r.geo_country.get(geoid),
+                None => None,
+            }
+            .map(|f| f.clone());
+            let continent = match r.geo_ip_continent.get(&ip) {
+                Some(geoid) => r.geo_continent.get(geoid),
+                None => None,
+            }
+            .map(|f| f.clone());
+            let asn_ip = r.ip_asn.get(&ip).map(|f| f.clone());
+            let asn = match &asn_ip {
+                Some(aa) => r.asn.get(&aa.asn),
+                None => None,
+            }
+            .map(|f| f.clone());
+
+            Ok(HttpResponse::Ok().json(IPDetail {
+                asn_ip,
+                asn,
+                city,
+                country,
+                continent,
+                ip,
+                ip_id_port: ip_id_port.clone(),
+                nodes,
+            }))
+        }
+        Err(_e) => Ok(HttpResponse::NotAcceptable().body("bad ip")),
     }
 }

@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::BufReader;
 use std::sync::{Arc, Mutex};
-use terra_rust_api::addressbook::NodeAddr;
+use terra_rust_api::addressbook::{NodeAddr, NodeIDIPPort};
 use terra_rust_api::terra_datetime_format;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -60,6 +60,8 @@ pub struct State {
     #[serde(with = "terra_datetime_format")]
     pub last_saved: DateTime<Utc>,
     pub nodes: HashMap<String, NodeAddr>,
+    pub ip_ip_addr: HashMap<String, HashSet<NodeIDIPPort>>,
+    pub id_ip_addr: HashMap<String, HashSet<NodeIDIPPort>>,
     pub new_nodes: HashSet<String>,
     pub new_ips_bgp: HashSet<String>,
     pub new_ips_geo: HashSet<String>,
@@ -67,6 +69,7 @@ pub struct State {
     /// ips in a ASN (1->Many)
     pub asn_ip: HashMap<String, HashSet<String>>,
     pub asn: HashMap<String, ASN>,
+    /// geo based info
     pub geo_city: HashMap<GeoID, GeoCity>,
     pub geo_country: HashMap<GeoID, GeoCountry>,
     pub geo_continent: HashMap<GeoID, GeoContinent>,
@@ -88,6 +91,8 @@ impl State {
         Ok(State {
             last_saved: DateTime::from(DateTime::parse_from_rfc3339("2019-10-12T07:20:50.52Z")?),
             nodes: HashMap::new(),
+            ip_ip_addr: Default::default(),
+            id_ip_addr: Default::default(),
             new_nodes: HashSet::new(),
             new_ips_bgp: HashSet::new(),
             new_ips_geo: HashSet::new(),
