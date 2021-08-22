@@ -8,6 +8,7 @@ use terra_rust_api::addressbook::{NodeAddr, NodeIDIPPort};
 use terra_rust_api::terra_datetime_format;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
+#[allow(clippy::upper_case_acronyms)]
 pub struct ASN {
     pub asn: String,
     pub country: String,

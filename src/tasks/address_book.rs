@@ -3,6 +3,7 @@ use chrono::prelude::*;
 use chrono::Duration;
 use terra_rust_api::AddressBook;
 
+use std::collections::hash_map::Entry;
 use std::collections::HashSet;
 use tokio::time::sleep;
 
@@ -17,8 +18,15 @@ pub async fn run(
             Ok(the_book) => {
                 let mut nodes = state.lock().unwrap();
                 the_book.addrs.iter().for_each(|entry| {
+                    /*
                     if !nodes.nodes.contains_key(&entry.addr.to_string()) {
                         nodes.nodes.insert(entry.addr.to_string(), entry.clone());
+                        nodes.new_nodes.insert(entry.addr.to_string());
+                        nodes.new_ips_bgp.insert(entry.addr.ip.clone());
+                        nodes.new_ips_geo.insert(entry.addr.ip.clone());
+                    }*/
+                    if let Entry::Vacant(e) = nodes.nodes.entry(entry.addr.to_string()) {
+                        e.insert(entry.clone());
                         nodes.new_nodes.insert(entry.addr.to_string());
                         nodes.new_ips_bgp.insert(entry.addr.ip.clone());
                         nodes.new_ips_geo.insert(entry.addr.ip.clone());

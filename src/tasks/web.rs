@@ -157,12 +157,11 @@ async fn node_detail(req: HttpRequest) -> Result<HttpResponse, AWError> {
             let empty: HashSet<NodeIDIPPort> = HashSet::new();
             let id_ip_port = r.id_ip_addr.get(&node).unwrap_or(&empty);
             let mut nodes: Vec<NodeAddr> = vec![];
-            id_ip_port
-                .iter()
-                .for_each(|f| match r.nodes.get(&f.to_string()) {
-                    Some(n) => nodes.push(n.clone()),
-                    None => {}
-                });
+            id_ip_port.iter().for_each(|f| {
+                if let Some(n) = r.nodes.get(&f.to_string()) {
+                    nodes.push(n.clone())
+                }
+            });
             Ok(HttpResponse::Ok().json(NodeDetail {
                 id: node,
                 id_ip_port: id_ip_port.clone(),
@@ -192,33 +191,32 @@ async fn ip_detail(req: HttpRequest) -> Result<HttpResponse, AWError> {
             let empty: HashSet<NodeIDIPPort> = HashSet::new();
             let ip_id_port = r.ip_ip_addr.get(&ip).unwrap_or(&empty);
             let mut nodes: Vec<NodeAddr> = vec![];
-            ip_id_port
-                .iter()
-                .for_each(|f| match r.nodes.get(&f.to_string()) {
-                    Some(n) => nodes.push(n.clone()),
-                    None => {}
-                });
+            ip_id_port.iter().for_each(|f| {
+                if let Some(n) = r.nodes.get(&f.to_string()) {
+                    nodes.push(n.clone())
+                }
+            });
             let city = match r.geo_ip_city.get(&ip) {
                 Some(geoid) => r.geo_city.get(geoid),
                 None => None,
             }
-            .map(|f| f.clone());
+            .cloned();
             let country = match r.geo_ip_country.get(&ip) {
                 Some(geoid) => r.geo_country.get(geoid),
                 None => None,
             }
-            .map(|f| f.clone());
+            .cloned();
             let continent = match r.geo_ip_continent.get(&ip) {
                 Some(geoid) => r.geo_continent.get(geoid),
                 None => None,
             }
-            .map(|f| f.clone());
-            let asn_ip = r.ip_asn.get(&ip).map(|f| f.clone());
+            .cloned();
+            let asn_ip = r.ip_asn.get(&ip).cloned();
             let asn = match &asn_ip {
                 Some(aa) => r.asn.get(&aa.asn),
                 None => None,
             }
-            .map(|f| f.clone());
+            .cloned();
 
             Ok(HttpResponse::Ok().json(IPDetail {
                 asn_ip,

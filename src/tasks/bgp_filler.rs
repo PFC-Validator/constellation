@@ -105,7 +105,7 @@ async fn grab_asn_for_ip(
     ip: &str,
 ) -> anyhow::Result<Option<IpAsnMapping>> {
     log::info!("Grabbing ASN for IP {}", ip);
-    let bits = ip.split(".").collect::<Vec<&str>>();
+    let bits = ip.split('.').collect::<Vec<&str>>();
     if bits.len() == 4 {
         let hostname = format!(
             "{}.{}.{}.{}.origin.asn.cymru.com.",
@@ -113,8 +113,8 @@ async fn grab_asn_for_ip(
         );
         Ok(match dns_resolve_txt(resolver, &hostname).await? {
             Some(ip_asn_mapping) => {
-                let bits = ip_asn_mapping.split("|").collect::<Vec<_>>();
-                let asn_num = bits[0].trim().split(" ").collect::<Vec<&str>>();
+                let bits = ip_asn_mapping.split('|').collect::<Vec<_>>();
+                let asn_num = bits[0].trim().split(' ').collect::<Vec<&str>>();
                 Some(IpAsnMapping {
                     asn: asn_num[0].trim().to_string(),
                     range: bits[1].trim().to_string(),
@@ -138,7 +138,7 @@ async fn grab_asn_details(resolver: &TokioAsyncResolver, asn: &str) -> anyhow::R
     let hostname = format!("as{}.asn.cymru.com.", asn);
     Ok(match dns_resolve_txt(resolver, &hostname).await? {
         Some(ip_asn_mapping) => {
-            let bits = ip_asn_mapping.split("|").collect::<Vec<_>>();
+            let bits = ip_asn_mapping.split('|').collect::<Vec<_>>();
             Some(ASN {
                 asn: bits[0].trim().to_string(),
 
@@ -158,7 +158,7 @@ async fn dns_resolve_txt(
     resolver: &TokioAsyncResolver,
     hostname: &str,
 ) -> anyhow::Result<Option<String>> {
-    let txt_lookup = resolver.txt_lookup(hostname.clone()).await?;
+    let txt_lookup = resolver.txt_lookup(hostname).await?;
     match txt_lookup
         .iter()
         .map(|f| f.to_string())

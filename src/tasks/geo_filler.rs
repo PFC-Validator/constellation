@@ -3,6 +3,7 @@ use chrono::prelude::*;
 use chrono::Duration;
 use maxminddb::geoip2::City;
 use maxminddb::MaxMindDBError;
+use std::collections::hash_map::Entry;
 use std::collections::HashSet;
 use std::net::{AddrParseError, IpAddr};
 use tokio::time::sleep;
@@ -49,17 +50,16 @@ pub async fn run(state: AppState, period: Duration, db_filename: String) -> anyh
                                         .unwrap_or(0);
 
                                     let mut the_state = state.lock().unwrap();
-                                    city.city.map(|cx| {
+                                    if let Some(cx) = city.city {
                                         let name = cx
                                             .names
                                             .map(|b| *b.get("en").unwrap_or(&"-none-"))
                                             .map(|f| f.to_string());
-                                        if !the_state
-                                            .geo_city
-                                            .contains_key(&cx.geoname_id.unwrap_or(0))
+                                        if let Entry::Vacant(e) =
+                                            the_state.geo_city.entry(cx.geoname_id.unwrap_or(0))
                                         {
-                                            the_state.geo_city.insert(
-                                                cx.geoname_id.unwrap_or(0),
+                                            e.insert(
+                                                //cx.geoname_id.unwrap_or(0),
                                                 GeoCity {
                                                     geoname_id: cx.geoname_id.unwrap_or(0),
                                                     name,
@@ -76,26 +76,22 @@ pub async fn run(state: AppState, period: Duration, db_filename: String) -> anyh
                                         };
                                         s.insert(ip.clone());
                                         the_state.geo_city_ip.insert(city_id, s);
-                                    });
-                                    city.country.map(|cx| {
+                                    };
+                                    if let Some(cx) = city.country {
                                         let name = cx
                                             .names
                                             .map(|b| *b.get("en").unwrap_or(&"-none-"))
                                             .map(|f| f.to_string());
-                                        if !the_state
-                                            .geo_country
-                                            .contains_key(&cx.geoname_id.unwrap_or(0))
+                                        if let Entry::Vacant(e) =
+                                            the_state.geo_country.entry(cx.geoname_id.unwrap_or(0))
                                         {
-                                            the_state.geo_country.insert(
-                                                cx.geoname_id.unwrap_or(0),
-                                                GeoCountry {
-                                                    geoname_id: cx.geoname_id.unwrap_or(0),
-                                                    name,
-                                                    is_in_european_union: cx.is_in_european_union,
-                                                    iso_code: cx.iso_code.map(|f| f.to_string()),
-                                                    last_updated: Utc::now(),
-                                                },
-                                            );
+                                            e.insert(GeoCountry {
+                                                geoname_id: cx.geoname_id.unwrap_or(0),
+                                                name,
+                                                is_in_european_union: cx.is_in_european_union,
+                                                iso_code: cx.iso_code.map(|f| f.to_string()),
+                                                last_updated: Utc::now(),
+                                            });
                                         }
                                         the_state.geo_ip_country.insert(ip.clone(), country_id);
                                         let mut s = match the_state.geo_country_ip.get(&country_id)
@@ -105,25 +101,22 @@ pub async fn run(state: AppState, period: Duration, db_filename: String) -> anyh
                                         };
                                         s.insert(ip.clone());
                                         the_state.geo_country_ip.insert(country_id, s);
-                                    });
-                                    city.continent.map(|cx| {
+                                    };
+                                    if let Some(cx) = city.continent {
                                         let name = cx
                                             .names
                                             .map(|b| *b.get("en").unwrap_or(&"-none-"))
                                             .map(|f| f.to_string());
-                                        if !the_state
+                                        if let Entry::Vacant(e) = the_state
                                             .geo_continent
-                                            .contains_key(&cx.geoname_id.unwrap_or(0))
+                                            .entry(cx.geoname_id.unwrap_or(0))
                                         {
-                                            the_state.geo_continent.insert(
-                                                cx.geoname_id.unwrap_or(0),
-                                                GeoContinent {
-                                                    geoname_id: cx.geoname_id.unwrap_or(0),
-                                                    name,
-                                                    code: cx.code.map(|f| f.to_string()),
-                                                    last_updated: Utc::now(),
-                                                },
-                                            );
+                                            e.insert(GeoContinent {
+                                                geoname_id: cx.geoname_id.unwrap_or(0),
+                                                name,
+                                                code: cx.code.map(|f| f.to_string()),
+                                                last_updated: Utc::now(),
+                                            });
                                         }
                                         the_state.geo_ip_continent.insert(ip.clone(), continent_id);
                                         let mut s =
@@ -133,7 +126,7 @@ pub async fn run(state: AppState, period: Duration, db_filename: String) -> anyh
                                             };
                                         s.insert(ip.clone());
                                         the_state.geo_continent_ip.insert(continent_id, s);
-                                    });
+                                    };
                                     the_state.new_ips_geo.remove(&ip);
                                 }
                                 Err(e) => {
