@@ -6,6 +6,7 @@ use crate::state::{AppState, State, StateVersion};
 use actix_web::dev::Server;
 use dotenv::dotenv;
 use std::sync::{mpsc, Arc, Mutex};
+use std::time::Duration;
 use structopt::StructOpt;
 use tokio::task::JoinHandle;
 
@@ -16,14 +17,38 @@ pub const NAME: Option<&'static str> = option_env!("CARGO_PKG_NAME");
 #[derive(StructOpt)]
 struct Cli {
     #[structopt(
-        name = "node",
-        env = "TERRAD_ENDPOINT",
-        default_value = "http://localhost:26657",
+        name = "lcd",
+        env = "TERRARUST_LCD",
+        default_value = "https://lcd.terra.dev",
         short,
-        help = "terrad RPC endpoint is main-net"
+        long = "lcd-client-url",
+        help = "https://lcd.terra.dev is main-net"
     )]
     // Terra cli Client daemon
-    _node: String,
+    lcd_endpoint: String,
+    #[structopt(
+        name = "rpc",
+        about = "RPC endpoint",
+        env = "TERRARUST_RPC_ENDPOINT",
+        default_value = "http://public-node.terra.dev:26657"
+    )]
+    rpc_endpoint: String,
+    #[structopt(
+        name = "fcd",
+        about = "fcd endpoint",
+        env = "TERRARUST_FCD_ENDPOINT",
+        default_value = "https://fcd.terra.dev"
+    )]
+    _fcd_endpoint: String,
+    #[structopt(
+        name = "chain",
+        env = "TERRARUST_CHAIN",
+        default_value = "columbus-4",
+        short,
+        long = "chain",
+        help = "tequila-0004 is testnet, columbus-4 is main-net"
+    )]
+    chain_id: String,
     #[structopt(
         name = "address-book",
         env = "ADDRESS_BOOK_MAIN",
@@ -33,16 +58,7 @@ struct Cli {
     )]
     // Terra cli Client daemon
     address_book: String,
-    #[structopt(
-        name = "lcd",
-        env = "TERRARUST_LCD",
-        default_value = "https://lcd.terra.dev",
-        short,
-        long = "lcd-client-url",
-        help = "https://lcd.terra.dev is main-net"
-    )]
-    // Terra cli Client daemon
-    _lcd: String,
+
     #[structopt(
         name = "state-file",
         default_value = "state.json",
@@ -83,22 +99,32 @@ async fn run() -> anyhow::Result<()> {
 
     tasks.push(tokio::task::spawn(tasks::address_book::run(
         state.clone(),
-        chrono::Duration::minutes(5),
+        Duration::from_secs(60 * 5),
         cli.address_book,
     )));
     tasks.push(tokio::task::spawn(tasks::bgp_filler::run(
         state.clone(),
-        chrono::Duration::seconds(5),
+        Duration::from_secs(60 * 5),
     )));
     tasks.push(tokio::task::spawn(tasks::state_checkpoint::run(
         state.clone(),
-        chrono::Duration::seconds(5),
+        Duration::from_secs(60),
         cli.state_file,
     )));
     tasks.push(tokio::task::spawn(tasks::geo_filler::run(
         state.clone(),
-        chrono::Duration::seconds(5),
+        Duration::from_secs(60 * 5),
         cli.db_file,
+    )));
+    tasks.push(tokio::task::spawn(tasks::rpc_crawler::run(
+        state.clone(),
+        Duration::from_secs(5),
+        cli.chain_id,
+        cli.lcd_endpoint,
+        cli.rpc_endpoint,
+        // cli.fcd_endpoint,
+        //   "ukrw".into(),
+        //   1.4,
     )));
     tasks.push(tokio::task::spawn(tasks::web::run(state.clone(), tx)));
     // TODO - respawn failed tasks
@@ -121,7 +147,7 @@ async fn run() -> anyhow::Result<()> {
 }
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
+    dotenv().ok(); // this fails if .env isn't present
     env_logger::init();
 
     if let Err(ref err) = run().await {

@@ -553,6 +553,8 @@ dependencies = [
  "log",
  "maxminddb",
  "reqwest",
+ "rust_decimal",
+ "rust_decimal_macros",
  "serde",
  "serde_json",
  "structopt",
@@ -2529,7 +2531,7 @@ dependencies = [
 
 [[package]]
 name = "terra-rust-api"
-version = "0.2.10"
+version = "0.3.2"
 dependencies = [
  "anyhow",
  "base64",

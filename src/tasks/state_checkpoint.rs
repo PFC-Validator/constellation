@@ -1,11 +1,11 @@
 use crate::state::AppState;
-use chrono::prelude::*;
-use chrono::Duration;
-use tokio::time::sleep;
-
+use chrono::Utc;
+use std::time::Duration;
+use tokio::time;
 pub async fn run(state: AppState, period: Duration, checkpoint_file: String) -> anyhow::Result<()> {
+    let mut interval = time::interval(period);
+
     loop {
-        let start: DateTime<Utc> = Utc::now(); // e.g. `2014-11-28T12:45:59.324310806Z`
         let mut state_c = { state.lock().unwrap().clone() };
 
         let now = Utc::now();
@@ -20,14 +20,6 @@ pub async fn run(state: AppState, period: Duration, checkpoint_file: String) -> 
             }
         }
 
-        let spent = now - start;
-        if period - spent > Duration::seconds(1) {
-            let sleep_time = period - spent;
-            log::info!("Sleeping for {} ", sleep_time);
-
-            sleep(sleep_time.to_std()?).await;
-        } else {
-            log::debug!("no rest for the wicked")
-        }
+        interval.tick().await;
     }
 }

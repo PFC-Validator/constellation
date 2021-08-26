@@ -23,9 +23,11 @@ anyhow="1.0"
 thiserror = "1.0.26"
 url="2.2.2"
 trust-dns-resolver = "0.20.3"
-terra-rust-api = {version= "0.2.10", path="../../pfc/terra-rust/terra-rust-api" }
+terra-rust-api = {version= "0.3", path="../../pfc/terra-rust/terra-rust-api" }
 structopt = "0.3"
 chrono="0.4.19"
 futures="0.3.16"
 maxminddb = "0.21.0"
 actix-web="3"
+rust_decimal="1.12.2"
+rust_decimal_macros="1.12.2"
