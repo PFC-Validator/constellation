@@ -123,7 +123,7 @@ async fn run() -> anyhow::Result<()> {
     )));
     tasks.push(tokio::task::spawn(tasks::rpc_crawler::run(
         state.clone(),
-        Duration::from_secs(5),
+        Duration::from_secs(60 * 5),
         cli.chain_id,
         cli.lcd_endpoint,
         cli.rpc_endpoint,

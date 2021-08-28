@@ -14,10 +14,18 @@ impl Handler<MessageTX> for OracleActor {
     type Result = ();
 
     fn handle(&mut self, msg: MessageTX, _ctx: &mut Self::Context) {
-        log::info!(
-            "OracleActor Received: {} {}",
-            msg.tx.height,
-            msg.tx.tx.s_type
-        );
+        if msg.tx.tx.s_type == "core/StdTx" {
+            let messages = msg.tx.tx.value;
+            messages.msg.iter().for_each(|message| {
+                if message.s_type == "oracle/MsgAggregateExchangeRateVote" {
+                    log::info!("{} {}", message.s_type, message.value)
+                }
+                if message.s_type == "oracle/MsgAggregateExchangeRatePrevote" {
+                    log::info!("{} {}", message.s_type, message.value)
+                }
+            })
+        } else {
+            log::info!("Height: {} Type {}", msg.tx.height, msg.tx.tx.s_type);
+        }
     }
 }
