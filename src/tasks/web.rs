@@ -1,7 +1,5 @@
 use actix_web::dev::Server;
-use actix_web::{
-    middleware, rt, web, App, Error as AWError, HttpRequest, HttpResponse, HttpServer,
-};
+use actix_web::{middleware, web, App, Error as AWError, HttpRequest, HttpResponse, HttpServer};
 use constellation_shared::state::{
     AppState, GeoCity, GeoContinent, GeoCountry, GeoID, IpAsnMapping, ASN,
 };
@@ -11,8 +9,10 @@ use std::collections::HashSet;
 use std::sync::mpsc;
 use terra_rust_api::addressbook::{NodeAddr, NodeIDIPPort};
 
-pub async fn run(state: AppState, tx: mpsc::Sender<Server>) -> anyhow::Result<()> {
+pub async fn run(state: AppState, _tx: mpsc::Sender<Server>) {
     // srv is server controller type, `dev::Server`
+    let local = tokio::task::LocalSet::new();
+
     let srv = HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
@@ -33,13 +33,22 @@ pub async fn run(state: AppState, tx: mpsc::Sender<Server>) -> anyhow::Result<()
                 web::resource("/ip/{ip:\\d+\\.\\d+\\.\\d+\\.\\d+}").route(web::get().to(ip_detail)),
             )
     })
-    .bind("127.0.0.1:8080")?
-    .run();
-    let _ = tx.send(srv.clone());
+    .bind("127.0.0.1:8080");
+    match srv {
+        Ok(server) => {
+            let s = server.run();
+            //   let _ = tx.send(s);
+            local.spawn_local(s);
+            // s.await?;
+        }
+        Err(e) => {
+            log::error!("Fail to start webserver {}", e);
+        }
+    }
 
     // run future
     //  sys.block_on(srv)?;
-    Ok(())
+    // Ok(())
 }
 
 async fn cities(req: HttpRequest) -> Result<HttpResponse, AWError> {

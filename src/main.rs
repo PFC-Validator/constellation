@@ -8,7 +8,6 @@ use dotenv::dotenv;
 use structopt::StructOpt;
 use tokio::task::JoinHandle;
 
-use actix_web::rt;
 use constellation_shared::state::{AppState, State, StateVersion};
 
 mod errors;
@@ -83,6 +82,7 @@ struct Cli {
 
 async fn run() -> anyhow::Result<()> {
     let cli: Cli = Cli::from_args();
+    //    let local = tokio::task::LocalSet::new();
 
     let state_data = match State::restore(&cli.state_file) {
         Ok(versioned) => match versioned {
@@ -99,7 +99,7 @@ async fn run() -> anyhow::Result<()> {
     };
     let state: AppState = Arc::new(Mutex::new(state_data));
     let mut tasks: Vec<JoinHandle<anyhow::Result<()>>> = vec![];
-    let (tx_web, rx_web) = mpsc::channel::<Server>();
+    let (tx_web, _rx_web) = mpsc::channel::<Server>();
     //    let (tx_observer, rx_observer) = mpsc::channel::<()>();
 
     tasks.push(tokio::task::spawn(tasks::address_book::run(
@@ -132,13 +132,13 @@ async fn run() -> anyhow::Result<()> {
         //   1.4,
     )));
 
-    tasks.push(tokio::task::spawn(tasks::web::run(state.clone(), tx_web)));
+    let web_join = actix_rt::spawn(tasks::web::run(state.clone(), tx_web));
     tasks.push(tokio::task::spawn(constellation_observer::run(
         state.clone(),
         //tx_observer,
         "wss://observer.terra.dev/".into(),
     )));
-    let oracle_actor = constellation_observer::actor::OracleActor.start();
+    let _oracle_actor = constellation_observer::actor::OracleActor.start();
     // TODO - respawn failed tasks
     let returns = futures::future::join_all(tasks).await;
     returns
@@ -155,6 +155,7 @@ async fn run() -> anyhow::Result<()> {
                 log::error!("Task fail: {}", e)
             }
         });
+    web_join.await?;
     Ok(())
 }
 //#[tokio::main]
@@ -162,9 +163,7 @@ async fn run() -> anyhow::Result<()> {
 async fn main() {
     dotenv().ok(); // this fails if .env isn't present
     env_logger::init();
-    // let mut sys = rt::System::new();
-    let mut rt = tokio::runtime::Runtime::new().unwrap();
-    let local = tokio::task::LocalSet::new();
+    //let mut rt = tokio::runtime::Runtime::new().unwrap();
     if let Err(ref err) = run().await {
         log::error!("{}", err);
         err.chain()

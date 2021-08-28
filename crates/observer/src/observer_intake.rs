@@ -99,7 +99,7 @@ fn process_block_emit(_state: &AppState, block: &NewBlock) -> anyhow::Result<()>
     }
     Ok(())
 }
-fn process_block(_state: &AppState, block: &NewBlock) -> anyhow::Result<()> {
+fn _process_block(_state: &AppState, block: &NewBlock) -> anyhow::Result<()> {
     &block
         .data
         .result_begin_block
@@ -116,18 +116,14 @@ fn process_block(_state: &AppState, block: &NewBlock) -> anyhow::Result<()> {
                     } else {
                         validator = None;
                     }
-                } else {
-                    if attribute.key == "amount" {
-                        if let Some(v) = &attribute.value {
-                            amount = Coin::parse_coins(v).unwrap_or(vec![])
-                        } else {
-                            if event.s_type != "commission" {
-                                log::info!("unable to find coins? {}", event.s_type)
-                            }
-                        }
-                    } else {
-                        // log::info!("{} {}", attribute.key, attribute.value)
+                } else if attribute.key == "amount" {
+                    if let Some(v) = &attribute.value {
+                        amount = Coin::parse_coins(v).unwrap_or_default()
+                    } else if event.s_type != "commission" {
+                        log::info!("unable to find coins? {}", event.s_type)
                     }
+                } else {
+                    // log::info!("{} {}", attribute.key, attribute.value)
                 }
             });
             if let Some(v) = validator {
@@ -149,18 +145,14 @@ fn process_block(_state: &AppState, block: &NewBlock) -> anyhow::Result<()> {
                     } else {
                         validator = None;
                     }
-                } else {
-                    if attribute.key == "amount" {
-                        if let Some(v) = &attribute.value {
-                            amount = Coin::parse_coins(v).unwrap_or(vec![])
-                        } else {
-                            if event.s_type != "commission" {
-                                log::info!("unable to find coins? {}", event.s_type)
-                            }
-                        }
-                    } else {
-                        // log::info!("{} {}", attribute.key, attribute.value)
+                } else if attribute.key == "amount" {
+                    if let Some(v) = &attribute.value {
+                        amount = Coin::parse_coins(v).unwrap_or_default()
+                    } else if event.s_type != "commission" {
+                        log::info!("unable to find coins? {}", event.s_type)
                     }
+                } else {
+                    // log::info!("{} {}", attribute.key, attribute.value)
                 }
             });
             if let Some(v) = validator {

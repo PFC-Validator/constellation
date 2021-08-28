@@ -88,7 +88,7 @@ pub async fn run_task(
                 log::warn!("found {} open rpc {:?}", open_rpc.len(), open_rpc);
             }
             if !open_peer.is_empty() {
-                log::warn!("found {} open peers {:?}", open_peer.len(), open_peer);
+                log::info!("found {} open peers", open_peer.len());
             }
             log::info!("{} connections", net_info.peers.len())
         }
