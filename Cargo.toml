@@ -3,31 +3,41 @@ name = "constellation"
 version = "0.1.0"
 edition = "2018"
 license = "Apache-2.0"
-description="Constellation oversees all the plants and things in the cosmos to ensure we can moon"
+description = "Constellation oversees all the plants and things in the cosmos to ensure we can moon"
 readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["native-tls"]
-native-tls = ["reqwest/native-tls"]
-rustls-tls = ["reqwest/rustls-tls"]
+native-tls = ["reqwest/native-tls", "constellation-observer/native-tls"]
+rustls-tls = ["reqwest/rustls-tls", "constellation-observer/rustls-tls"]
 
 [dependencies]
 tokio = { version = "1.10", features = ["full"] }
-dotenv="0.15.0"
-log="0.4.14"
+dotenv = "0.15.0"
+log = "0.4.14"
 env_logger = "0.9.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-reqwest = { version ="0.11", features=["json"], default-features = false }
-anyhow="1.0"
+reqwest = { version = "0.11", features = ["json"], default-features = false }
+anyhow = "1.0"
 thiserror = "1.0.26"
-url="2.2.2"
+url = "2.2.2"
 trust-dns-resolver = "0.20.3"
-terra-rust-api = {version= "0.3", path="../../pfc/terra-rust/terra-rust-api" }
+terra-rust-api = { version = "0.3.4", path= "../terra-rust/terra-rust-api" }
 structopt = "0.3"
-chrono="0.4.19"
-futures="0.3.16"
+chrono = "0.4.19"
+futures = "0.3.16"
 maxminddb = "0.21.0"
-actix-web="3"
-rust_decimal="1.12.2"
-rust_decimal_macros="1.12.2"
+actix="0.12.0"
+actix-web = "4.0.0-beta.8"
+actix-rt = "2.2.0"
+actix-broker = "0.4.1"
+rust_decimal = "1.12.2"
+rust_decimal_macros = "1.12.2"
+httparse="1.5.1"
+constellation-shared={ path = "./crates/shared", version = "0.1"}
+constellation-observer={ path = "./crates/observer", version = "0.1"}
+
+
+[workspace]
+members=["crates/observer", "crates/shared"]

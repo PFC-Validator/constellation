@@ -55,6 +55,12 @@ pub struct GeoCountry {
     #[serde(with = "terra_datetime_format")]
     pub last_updated: DateTime<Utc>,
 }
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct ValidatorStat {
+    pub validator_address: String,
+    //pub commits: [i8; 60], // -1 not set, 0 fail, 1 commit
+    pub commit_index: usize,
+}
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct State {
@@ -80,6 +86,7 @@ pub struct State {
     pub geo_city_ip: HashMap<GeoID, HashSet<String>>,
     pub geo_country_ip: HashMap<GeoID, HashSet<String>>,
     pub geo_continent_ip: HashMap<GeoID, HashSet<String>>,
+    //  pub validator_stats: HashMap<String, ValidatorStat>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -109,6 +116,7 @@ impl State {
             geo_country_ip: Default::default(),
             asn_ip: HashMap::new(),
             geo_continent_ip: Default::default(),
+            //        validator_stats: Default::default(),
         })
     }
 
@@ -132,5 +140,5 @@ impl State {
         Ok(())
     }
 }
-pub(crate) type AppState = Arc<Mutex<State>>;
+pub type AppState = Arc<Mutex<State>>;
 pub type GeoID = u32;

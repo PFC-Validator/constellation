@@ -1,4 +1,4 @@
-use crate::state::AppState;
+use constellation_shared::state::AppState;
 use terra_rust_api::AddressBook;
 
 use std::collections::hash_map::Entry;

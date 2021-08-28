@@ -1,14 +1,18 @@
-mod errors;
-mod state;
-mod tasks;
-
-use crate::state::{AppState, State, StateVersion};
-use actix_web::dev::Server;
-use dotenv::dotenv;
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
+
+use actix::prelude::*;
+
+use actix_web::dev::Server;
+use dotenv::dotenv;
 use structopt::StructOpt;
 use tokio::task::JoinHandle;
+
+use actix_web::rt;
+use constellation_shared::state::{AppState, State, StateVersion};
+
+mod errors;
+mod tasks;
 
 /// VERSION number of package
 pub const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
@@ -95,7 +99,8 @@ async fn run() -> anyhow::Result<()> {
     };
     let state: AppState = Arc::new(Mutex::new(state_data));
     let mut tasks: Vec<JoinHandle<anyhow::Result<()>>> = vec![];
-    let (tx, rx) = mpsc::channel::<Server>();
+    let (tx_web, rx_web) = mpsc::channel::<Server>();
+    //    let (tx_observer, rx_observer) = mpsc::channel::<()>();
 
     tasks.push(tokio::task::spawn(tasks::address_book::run(
         state.clone(),
@@ -126,7 +131,14 @@ async fn run() -> anyhow::Result<()> {
         //   "ukrw".into(),
         //   1.4,
     )));
-    tasks.push(tokio::task::spawn(tasks::web::run(state.clone(), tx)));
+
+    tasks.push(tokio::task::spawn(tasks::web::run(state.clone(), tx_web)));
+    tasks.push(tokio::task::spawn(constellation_observer::run(
+        state.clone(),
+        //tx_observer,
+        "wss://observer.terra.dev/".into(),
+    )));
+    let oracle_actor = constellation_observer::actor::OracleActor.start();
     // TODO - respawn failed tasks
     let returns = futures::future::join_all(tasks).await;
     returns
@@ -145,26 +157,18 @@ async fn run() -> anyhow::Result<()> {
         });
     Ok(())
 }
-#[tokio::main]
+//#[tokio::main]
+#[actix_web::main]
 async fn main() {
     dotenv().ok(); // this fails if .env isn't present
     env_logger::init();
-
+    // let mut sys = rt::System::new();
+    let mut rt = tokio::runtime::Runtime::new().unwrap();
+    let local = tokio::task::LocalSet::new();
     if let Err(ref err) = run().await {
         log::error!("{}", err);
         err.chain()
             .skip(1)
             .for_each(|cause| log::error!("because: {}", cause));
-
-        // The backtrace is not always generated. Try to run this example
-        // with `$env:RUST_BACKTRACE=1`.
-        /*
-        if let Some(backtrace) = err.backtrace() {
-            log::debug!("backtrace: {:?}", backtrace);
-        }
-
-         */
-
-        ::std::process::exit(1);
     }
 }

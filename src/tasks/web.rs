@@ -1,7 +1,9 @@
-use crate::state::{AppState, GeoCity, GeoContinent, GeoCountry, GeoID, IpAsnMapping, ASN};
 use actix_web::dev::Server;
 use actix_web::{
     middleware, rt, web, App, Error as AWError, HttpRequest, HttpResponse, HttpServer,
+};
+use constellation_shared::state::{
+    AppState, GeoCity, GeoContinent, GeoCountry, GeoID, IpAsnMapping, ASN,
 };
 
 use serde::Serialize;
@@ -10,7 +12,6 @@ use std::sync::mpsc;
 use terra_rust_api::addressbook::{NodeAddr, NodeIDIPPort};
 
 pub async fn run(state: AppState, tx: mpsc::Sender<Server>) -> anyhow::Result<()> {
-    let mut sys = rt::System::new("test");
     // srv is server controller type, `dev::Server`
     let srv = HttpServer::new(move || {
         App::new()
@@ -37,7 +38,7 @@ pub async fn run(state: AppState, tx: mpsc::Sender<Server>) -> anyhow::Result<()
     let _ = tx.send(srv.clone());
 
     // run future
-    sys.block_on(srv)?;
+    //  sys.block_on(srv)?;
     Ok(())
 }
 

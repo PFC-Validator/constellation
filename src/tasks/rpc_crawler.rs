@@ -1,4 +1,4 @@
-use crate::state::AppState;
+use constellation_shared::state::AppState;
 use std::time::Duration;
 use terra_rust_api::Terra;
 use tokio::time;

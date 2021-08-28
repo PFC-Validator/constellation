@@ -1,6 +1,6 @@
 use crate::errors::ConstellationError::BadIp;
-use crate::state::{AppState, IpAsnMapping, ASN};
 use chrono::Utc;
+use constellation_shared::state::{AppState, IpAsnMapping, ASN};
 use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 use tokio::time;

@@ -1,5 +1,5 @@
-use crate::state::{AppState, GeoCity, GeoContinent, GeoCountry};
 use chrono::Utc;
+use constellation_shared::state::{AppState, GeoCity, GeoContinent, GeoCountry};
 use maxminddb::geoip2::City;
 use maxminddb::MaxMindDBError;
 use std::collections::hash_map::Entry;
