@@ -4,7 +4,6 @@ use crate::types::NewBlock;
 use crate::MessageTX;
 use actix_broker::{Broker, SystemBroker};
 use constellation_shared::AppState;
-use terra_rust_api::core_types::Coin;
 use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::http::Request;
 use tokio_tungstenite::tungstenite::Message;
@@ -99,6 +98,7 @@ fn process_block_emit(_state: &AppState, block: &NewBlock) -> anyhow::Result<()>
     }
     Ok(())
 }
+/*
 fn _process_block(_state: &AppState, block: &NewBlock) -> anyhow::Result<()> {
     &block
         .data
@@ -226,3 +226,4 @@ fn _process_block(_state: &AppState, block: &NewBlock) -> anyhow::Result<()> {
 
     Ok(())
 }
+*/

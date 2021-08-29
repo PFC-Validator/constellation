@@ -549,6 +549,7 @@ dependencies = [
  "constellation-shared",
  "futures",
  "log",
+ "rust_decimal",
  "serde",
  "serde_json",
  "terra-rust-api",

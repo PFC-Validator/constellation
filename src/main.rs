@@ -124,12 +124,9 @@ async fn run() -> anyhow::Result<()> {
     tasks.push(tokio::task::spawn(tasks::rpc_crawler::run(
         state.clone(),
         Duration::from_secs(60 * 5),
-        cli.chain_id,
-        cli.lcd_endpoint,
-        cli.rpc_endpoint,
-        // cli.fcd_endpoint,
-        //   "ukrw".into(),
-        //   1.4,
+        cli.chain_id.clone(),
+        cli.lcd_endpoint.clone(),
+        cli.rpc_endpoint.clone(),
     )));
 
     let web_join = actix_rt::spawn(tasks::web::run(state.clone(), tx_web));
@@ -138,7 +135,11 @@ async fn run() -> anyhow::Result<()> {
         //tx_observer,
         "wss://observer.terra.dev/".into(),
     )));
-    let _oracle_actor = constellation_observer::actor::OracleActor.start();
+
+    let oracle_actor =
+        constellation_observer::actor::OracleActor::create(&cli.lcd_endpoint, &cli.chain_id)
+            .await?;
+    oracle_actor.start();
     // TODO - respawn failed tasks
     let returns = futures::future::join_all(tasks).await;
     returns

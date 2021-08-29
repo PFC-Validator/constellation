@@ -16,10 +16,6 @@ pub async fn run(
     log::info!("{} {}", lcd_endpoint, rpc_endpoint);
     let mut interval = time::interval(period);
     loop {
-        // let client = reqwest::Client::new();
-        //  let _gas =
-        //      GasOptions::create_with_fcd(&client, &fcd_endpoint, &gas_denom, gas_multiplier).await;
-
         match Terra::lcd_client_no_tx(&lcd_endpoint, &chain_id).await {
             Ok(terra) => match run_task(&state, &terra, &rpc_endpoint).await {
                 Ok(_) => {}
