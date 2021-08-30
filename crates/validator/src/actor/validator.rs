@@ -1,13 +1,15 @@
 use std::collections::HashMap;
 
 use actix::prelude::*;
-use actix_broker::BrokerSubscribe;
+use actix_broker::{Broker, BrokerSubscribe, SystemBroker};
 use chrono::{DateTime, Utc};
 //use rust_decimal::Decimal;
 use terra_rust_api::staking_types::Validator;
 use terra_rust_api::Terra;
 
-use constellation_observer::messages::{MessagePriceAbstain, MessagePriceDrift};
+use constellation_observer::messages::{
+    MessagePriceAbstain, MessagePriceDrift, MessageValidator, MessageValidatorStakedTotal,
+};
 use constellation_observer::BrokerType;
 use std::collections::hash_map::Entry;
 
@@ -25,21 +27,27 @@ pub struct ValidatorDetails {
 pub struct ValidatorActor {
     pub validators: HashMap<String, ValidatorDetails>,
     pub moniker: HashMap<String, String>,
+    pub lcd: String,
+    pub chain: String,
 }
 impl ValidatorActor {
     pub async fn create(lcd: &str, chain: &str) -> anyhow::Result<ValidatorActor> {
         let terra = Terra::lcd_client_no_tx(lcd, chain).await?;
         let validator_result = terra.staking().validators().await?;
 
-        Ok(ValidatorActor::create_from_validator_list(
-            validator_result.height,
-            validator_result.result,
-        ))
+        let (validators, monikers) =
+            ValidatorActor::from_validator_list(validator_result.height, validator_result.result);
+        Ok(ValidatorActor {
+            validators,
+            moniker: monikers,
+            lcd: lcd.into(),
+            chain: chain.into(),
+        })
     }
-    pub fn create_from_validator_list(
+    fn from_validator_list(
         height: u64,
         validator_list: Vec<Validator>,
-    ) -> ValidatorActor {
+    ) -> (HashMap<String, ValidatorDetails>, HashMap<String, String>) {
         let now = Utc::now();
         let mut validators: HashMap<String, ValidatorDetails> = Default::default();
         let mut moniker: HashMap<String, String> = Default::default();
@@ -56,12 +64,14 @@ impl ValidatorActor {
                     drifts: 0,
                 },
             );
+            Broker::<SystemBroker>::issue_async(MessageValidatorStakedTotal {
+                height,
+                operator_address: v.operator_address.clone(),
+                tokens: v.tokens,
+            });
             moniker.insert(v.description.moniker.clone(), v.operator_address.clone());
         });
-        ValidatorActor {
-            validators,
-            moniker,
-        }
+        (validators, moniker)
     }
 }
 impl Actor for ValidatorActor {
@@ -70,6 +80,42 @@ impl Actor for ValidatorActor {
     fn started(&mut self, ctx: &mut Self::Context) {
         self.subscribe_sync::<BrokerType, MessagePriceDrift>(ctx);
         self.subscribe_sync::<BrokerType, MessagePriceAbstain>(ctx);
+        self.subscribe_sync::<BrokerType, MessageValidator>(ctx);
+    }
+}
+
+impl Handler<MessageValidator> for ValidatorActor {
+    type Result = ();
+
+    fn handle(&mut self, msg: MessageValidator, _ctx: &mut Self::Context) {
+        let height = msg.height;
+        let now = Utc::now();
+        match self.validators.entry(msg.operator_address.clone()) {
+            Entry::Occupied(mut e) => {
+                let mut v = e.get_mut();
+
+                v.last_updated_block = height;
+                v.last_updated_date = now;
+                v.validator = msg.validator.clone();
+            }
+            Entry::Vacant(e) => {
+                let v = ValidatorDetails {
+                    validator: msg.validator.clone(),
+                    first_seen_date: now,
+                    last_updated_date: now,
+                    first_seen_block: height,
+                    last_updated_block: height,
+                    abstains: 0,
+                    drifts: 0,
+                };
+                e.insert(v);
+            }
+        }
+        Broker::<SystemBroker>::issue_async(MessageValidatorStakedTotal {
+            height,
+            operator_address: msg.operator_address.clone(),
+            tokens: msg.validator.tokens,
+        });
     }
 }
 
@@ -86,7 +132,7 @@ impl Handler<MessagePriceAbstain> for ValidatorActor {
                 v.last_updated_block = height;
                 v.last_updated_date = now;
                 //   e.into_mut();
-                log::info!(
+                log::debug!(
                     "{} '{}' {} has abstained from voting for this denomination Abstains:{} Drifts:{} - {}",
                     height,
                     v.validator.description.moniker,
@@ -100,22 +146,6 @@ impl Handler<MessagePriceAbstain> for ValidatorActor {
                 log::error!("Validator not found ? {}", msg.operator_address)
             }
         }
-        /*
-        if let Some(v) = self.validators.get_mut(&msg.operator_address) {
-            v.abstains = v.abstains + 1;
-            v.last_updated_block = height;
-            v.last_updated_date = now;
-            self.validators.insert(msg.operator_address.clone(), *v);
-            log::info!(
-                "{} '{}' {} has abstained from voting for this denomination - {}",
-                height,
-                v.validator.description.moniker,
-                msg.denom,
-                msg.txhash
-            );
-        } else {
-            log::error!("Validator not found ? {}", msg.operator_address)
-        }*/
     }
 }
 impl Handler<MessagePriceDrift> for ValidatorActor {
@@ -132,12 +162,13 @@ impl Handler<MessagePriceDrift> for ValidatorActor {
                 v.last_updated_date = now;
 
                 log::info!(
-                    "{} '{}' {} price drift submitted {:4} which is too far away from {:4} Abstains:{} Drifts:{}  - {}",
+                    "{} '{}' {} price drift submitted {:.4} which is too far away from {:.4}/{:4} Abstains:{} Drifts:{}  - {}",
                     height,
                     v.validator.description.moniker,
                     msg.denom,
                     msg.submitted,
                     msg.average,
+                    msg.weighted_average,
                     v.abstains,
                     v.drifts,
                     msg.txhash
@@ -146,21 +177,6 @@ impl Handler<MessagePriceDrift> for ValidatorActor {
             Entry::Vacant(_) => {
                 log::error!("Validator not found ? {}", msg.operator_address)
             }
-        }
-        if let Some(v) = self.validators.get(&msg.operator_address) {
-            if msg.denom.eq("uusd") || msg.denom.eq("ukrw") {
-                log::info!(
-                    "{} '{}' {} price drift submitted {} which is too far away from {} - {}",
-                    height,
-                    v.validator.description.moniker,
-                    msg.denom,
-                    msg.submitted,
-                    msg.average,
-                    msg.txhash
-                );
-            }
-        } else {
-            log::error!("Validator not found ? {}", msg.operator_address)
         }
     }
 }

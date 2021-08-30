@@ -9,8 +9,11 @@ use terra_rust_api::core_types::Coin;
 use terra_rust_api::messages::oracle::MsgAggregateExchangeRateVote;
 use terra_rust_api::Terra;
 
-use crate::messages::{MessagePriceAbstain, MessagePriceDrift, MessageTX};
+use crate::messages::{
+    MessagePriceAbstain, MessagePriceDrift, MessageTX, MessageValidatorStakedTotal,
+};
 use crate::BrokerType;
+use std::collections::hash_map::Entry;
 
 pub struct OracleActor {
     pub vote_period: u64,
@@ -49,44 +52,66 @@ impl OracleActor {
 
     pub fn do_price_averages(&mut self, height: u64) {
         if !self.validator_vote_prices.is_empty() {
-            let mut agg_price: HashMap<String, (usize, Decimal)> = Default::default();
+            let mut agg_price: HashMap<String, (usize, u64, Decimal, Decimal)> = Default::default();
             self.validator_vote_prices.iter().for_each(|v_vote| {
-                v_vote.1.iter().for_each(|coin| {
-                    if coin.amount > Decimal::from_f64(0.001f64).unwrap() {
-                        let updated = match agg_price.get(&coin.denom) {
-                            None => (1, coin.amount),
-                            Some(i) => (1 + i.0, i.1 + coin.amount),
-                        };
-                        agg_price.insert(coin.denom.clone(), updated);
-                    } else {
-                        let txhash = self
-                            .validator_vote_last_hash
-                            .get(v_vote.0)
-                            .map(String::from);
+                let operator_address = v_vote.0;
+                let validator_prices = v_vote.1;
+                if let Some(weight) = self.validator_weight.get(operator_address) {
+                    validator_prices.iter().for_each(|coin| {
+                        if coin.amount > Decimal::from_f64(0.001f64).unwrap() {
+                            let updated = match agg_price.get(&coin.denom) {
+                                None => (
+                                    1,
+                                    *weight,
+                                    coin.amount,
+                                    coin.amount.mul(Decimal::from(*weight)),
+                                ),
+                                Some(i) => (
+                                    1 + i.0,
+                                    weight + i.1,
+                                    coin.amount + i.2,
+                                    coin.amount.mul(Decimal::from(*weight)) + i.3,
+                                ),
+                            };
+                            agg_price.insert(coin.denom.clone(), updated);
+                        } else {
+                            let txhash = self
+                                .validator_vote_last_hash
+                                .get(operator_address)
+                                .map(String::from);
 
-                        Broker::<SystemBroker>::issue_async(MessagePriceAbstain {
-                            height,
-                            operator_address: v_vote.0.clone(),
-                            denom: coin.denom.clone(),
-                            txhash: txhash.unwrap_or("-missing hash-".into()).clone(),
-                        });
-                    }
-                })
+                            Broker::<SystemBroker>::issue_async(MessagePriceAbstain {
+                                height,
+                                operator_address: operator_address.clone(),
+                                denom: coin.denom.clone(),
+                                txhash: txhash.unwrap_or("-missing hash-".into()).clone(),
+                            });
+                        }
+                    })
+                } else {
+                    log::info!("Validator {} has no weight, skipping", operator_address);
+                }
             });
-            let averages: HashMap<String, Decimal> = agg_price
+            let averages: HashMap<String, (Decimal, Decimal)> = agg_price
                 .iter()
                 .map(|f| {
                     let sum = f.1 .0;
-                    let avg_price = f.1 .1.div(Decimal::from(sum));
-                    (f.0.clone(), avg_price)
+                    let weighted_sum = f.1 .1;
+                    let avg_price = f.1 .2.div(Decimal::from(sum));
+                    let avg_weighted_price = f.1 .3.div(Decimal::from(weighted_sum));
+                    (f.0.clone(), (avg_price, avg_weighted_price))
                 })
                 .collect();
-            let drift_max_perc: Decimal = self.reward_band;
-            averages.iter().for_each(|f| log::info!("{} {}", f.0, f.1));
+            let drift_max_percentage: Decimal = self.reward_band;
+            averages
+                .iter()
+                .for_each(|f| log::info!("{} AVG:{:.4}\t Weighted:{:.4}", f.0, f.1 .0, f.1 .1));
             averages.iter().for_each(|f| {
                 let denom = f.0;
-                let average_price = f.1;
-                let drift_max = average_price.mul(drift_max_perc).abs();
+                let average_price = f.1 .0;
+                let average_weighted_price = f.1 .1;
+                let drift_max = average_price.mul(drift_max_percentage).abs();
+                let _drift_weighted_max = average_weighted_price.mul(drift_max_percentage).abs();
                 self.validator_vote_prices
                     .iter()
                     .for_each(|validator_price| {
@@ -109,11 +134,12 @@ impl OracleActor {
                                         .unwrap_or("-missing hash-".into());
 
                                     log::debug!(
-                                        "Drift detected {} {} {} {} {}/{} - {}",
+                                        "Drift detected {} {} {} {:4}/{:4} {}/{} - {}",
                                         operator_address,
                                         denom,
                                         submitted_price,
                                         average_price,
+                                        average_weighted_price,
                                         drift,
                                         drift_max,
                                         txhash
@@ -123,7 +149,8 @@ impl OracleActor {
                                         height,
                                         operator_address: operator_address.clone(),
                                         denom: denom.into(),
-                                        average: *average_price,
+                                        average: average_price,
+                                        weighted_average: average_weighted_price,
                                         submitted: submitted_price,
                                         txhash: txhash.clone(),
                                     });
@@ -142,9 +169,25 @@ impl Actor for OracleActor {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.subscribe_sync::<BrokerType, MessageTX>(ctx);
+        self.subscribe_sync::<BrokerType, MessageValidatorStakedTotal>(ctx);
     }
 }
+impl Handler<MessageValidatorStakedTotal> for OracleActor {
+    type Result = ();
 
+    fn handle(&mut self, msg: MessageValidatorStakedTotal, _ctx: &mut Self::Context) {
+        match self.validator_weight.entry(msg.operator_address.clone()) {
+            Entry::Occupied(mut e) => {
+                let v = e.get_mut();
+                *v = msg.tokens;
+                //   e.into();
+            }
+            Entry::Vacant(v) => {
+                v.insert(msg.tokens);
+            }
+        }
+    }
+}
 /*
 {"exchange_rates":"34.750000000000000000uusd,40830.000000000000000000ukrw,24.449822000000001054usdr,99068.814719250003690831umnt,29.460632999999997850ueur,25.245180000000001286ugbp,224.895188999999987800ucny,3816.505763999999999214ujpy,2554.013938999999936641uinr,43.867878750000002697ucad,31.678551750000000453uchf,270.621011249999980919uhkd,47.524621250000002703uaud,46.773673749999993277usgd,1128.037263999999822772uthb,300.404020000000002710usek,219.053713999999985163udkk,497729.462499999965075403uidr,1733.343031249999967258uphp","feeder":"terra1ml8x4n3yhq4jq6kfd4rr97jc058jyrexxqs84z","salt":"521c","validator":"terravaloper162892yn0tf8dxl8ghgneqykyr8ufrwmcs4q5m8"}
 */

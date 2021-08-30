@@ -173,9 +173,8 @@ async fn run() -> anyhow::Result<()> {
 //#[tokio::main]
 #[actix_web::main]
 async fn main() {
-    dotenv().ok(); // this fails if .env isn't present
+    dotenv().ok(); // this fails if .env isn't present. It is safe to be ignored
     env_logger::init();
-    //let mut rt = tokio::runtime::Runtime::new().unwrap();
     if let Err(ref err) = run().await {
         log::error!("{}", err);
         err.chain()
