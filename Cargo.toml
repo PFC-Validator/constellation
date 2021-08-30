@@ -37,7 +37,8 @@ rust_decimal_macros = "1.15.0"
 httparse="1.5.1"
 constellation-shared={ path = "./crates/shared", version = "0.1"}
 constellation-observer={ path = "./crates/observer", version = "0.1"}
+constellation-validator={ path = "./crates/validator", version = "0.1"}
 
 
 [workspace]
-members=["crates/observer", "crates/shared"]
+members=["crates/observer", "crates/shared", "crates/validator"]

@@ -1,11 +1,11 @@
-use crate::b64::{b64_format, b64_o_format};
-use actix::prelude::*;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use terra_rust_api::client::tendermint_types::Block;
 use terra_rust_api::client::tx_types::TxResultBlockMsg;
 use terra_rust_api::core_types::Coin;
 use terra_rust_api::{terra_datetime_format, terra_u64_format};
+
+use crate::b64::{b64_format, b64_o_format};
 
 /// new_block type from observer
 #[derive(Deserialize, Serialize, Debug)]
@@ -42,11 +42,6 @@ pub struct TXandResult {
     pub tx: TxOuter,
     #[serde(with = "terra_datetime_format")]
     pub timestamp: DateTime<Utc>,
-}
-#[derive(Clone, Debug, Message)]
-#[rtype(result = "()")]
-pub struct MessageTX {
-    pub tx: TXandResult,
 }
 
 #[derive(Deserialize, Clone, Serialize, Debug)]

@@ -517,6 +517,7 @@ dependencies = [
  "chrono",
  "constellation-observer",
  "constellation-shared",
+ "constellation-validator",
  "dotenv",
  "env_logger",
  "futures",
@@ -550,6 +551,7 @@ dependencies = [
  "futures",
  "log",
  "rust_decimal",
+ "rust_decimal_macros",
  "serde",
  "serde_json",
  "terra-rust-api",
@@ -567,6 +569,28 @@ dependencies = [
  "serde",
  "serde_json",
  "terra-rust-api",
+]
+
+[[package]]
+name = "constellation-validator"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-broker",
+ "actix-rt",
+ "anyhow",
+ "base64",
+ "chrono",
+ "constellation-observer",
+ "constellation-shared",
+ "futures",
+ "log",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "terra-rust-api",
+ "tokio",
+ "tokio-tungstenite",
 ]
 
 [[package]]

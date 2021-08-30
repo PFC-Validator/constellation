@@ -1,7 +1,7 @@
 use futures::{SinkExt, StreamExt};
 
+use crate::messages::MessageTX;
 use crate::types::NewBlock;
-use crate::MessageTX;
 use actix_broker::{Broker, SystemBroker};
 use constellation_shared::AppState;
 use tokio_tungstenite::connect_async;
@@ -18,8 +18,6 @@ pub async fn run(
     //  tx: mpsc::Sender<()>,
     connect_addr: String,
 ) -> anyhow::Result<()> {
-    //   let oracle_actor = crate::actor::OracleActor.start();
-    //let url = url::Url::parse(&connect_addr).unwrap();
     let ws_request = Request::builder()
         .header(
             "User-Agent",

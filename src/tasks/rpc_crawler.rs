@@ -24,7 +24,7 @@ pub async fn run(
                 }
             },
             Err(e) => {
-                log::error!("RPC Crawler: {}", e)
+                log::error!("creating LCD: {}", e)
             }
         }
         interval.tick().await;

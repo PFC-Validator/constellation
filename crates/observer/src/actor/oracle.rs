@@ -1,23 +1,29 @@
-use crate::{BrokerType, MessageTX};
-use actix::prelude::*;
-use actix_broker::BrokerSubscribe;
-use rust_decimal::Decimal;
 use std::collections::HashMap;
-use std::ops::Div;
+use std::ops::{Div, Mul};
+
+use actix::prelude::*;
+use actix_broker::{Broker, BrokerSubscribe, SystemBroker};
+use rust_decimal::prelude::*;
+//use rust_decimal_macros::dec;
 use terra_rust_api::core_types::Coin;
 use terra_rust_api::messages::oracle::MsgAggregateExchangeRateVote;
 use terra_rust_api::Terra;
 
+use crate::messages::{MessagePriceAbstain, MessagePriceDrift, MessageTX};
+use crate::BrokerType;
+
 pub struct OracleActor {
     pub vote_period: u64,
-    pub vote_threshold: f64,
-    pub reward_band: f64,
+    pub vote_threshold: Decimal,
+    pub reward_band: Decimal,
     pub reward_distribution_window: u64,
-    pub slash_fraction: f64,
+    pub slash_fraction: Decimal,
     pub slash_window: u64,
-    pub min_valid_per_window: f64,
+    pub min_valid_per_window: Decimal,
     pub last_avg_at_height: u64,
     pub validator_vote_last_seen: HashMap<String, u64>,
+    pub validator_weight: HashMap<String, u64>,
+    pub validator_vote_last_hash: HashMap<String, String>,
     pub validator_vote_prices: HashMap<String, Vec<Coin>>,
 }
 impl OracleActor {
@@ -27,28 +33,44 @@ impl OracleActor {
 
         Ok(OracleActor {
             vote_period: params.vote_period,
-            vote_threshold: params.vote_threshold,
-            reward_band: params.reward_band,
+            vote_threshold: Decimal::from_f64(params.vote_threshold).unwrap(),
+            reward_band: Decimal::from_f64(params.reward_band).unwrap(),
             reward_distribution_window: params.reward_distribution_window,
-            slash_fraction: params.slash_fraction,
+            slash_fraction: Decimal::from_f64(params.slash_fraction).unwrap(),
             slash_window: params.slash_window,
-            min_valid_per_window: params.min_valid_per_window,
+            min_valid_per_window: Decimal::from_f64(params.min_valid_per_window).unwrap(),
             validator_vote_last_seen: Default::default(),
             validator_vote_prices: Default::default(),
+            validator_vote_last_hash: Default::default(),
+            validator_weight: Default::default(),
             last_avg_at_height: 0,
         })
     }
 
-    pub fn do_price_averages(&mut self) {
+    pub fn do_price_averages(&mut self, height: u64) {
         if !self.validator_vote_prices.is_empty() {
             let mut agg_price: HashMap<String, (usize, Decimal)> = Default::default();
             self.validator_vote_prices.iter().for_each(|v_vote| {
                 v_vote.1.iter().for_each(|coin| {
-                    let updated = match agg_price.get(&coin.denom) {
-                        None => (1, coin.amount),
-                        Some(i) => (1 + i.0, i.1 + coin.amount),
-                    };
-                    agg_price.insert(coin.denom.clone(), updated);
+                    if coin.amount > Decimal::from_f64(0.001f64).unwrap() {
+                        let updated = match agg_price.get(&coin.denom) {
+                            None => (1, coin.amount),
+                            Some(i) => (1 + i.0, i.1 + coin.amount),
+                        };
+                        agg_price.insert(coin.denom.clone(), updated);
+                    } else {
+                        let txhash = self
+                            .validator_vote_last_hash
+                            .get(v_vote.0)
+                            .map(String::from);
+
+                        Broker::<SystemBroker>::issue_async(MessagePriceAbstain {
+                            height,
+                            operator_address: v_vote.0.clone(),
+                            denom: coin.denom.clone(),
+                            txhash: txhash.unwrap_or("-missing hash-".into()).clone(),
+                        });
+                    }
                 })
             });
             let averages: HashMap<String, Decimal> = agg_price
@@ -59,27 +81,59 @@ impl OracleActor {
                     (f.0.clone(), avg_price)
                 })
                 .collect();
+            let drift_max_perc: Decimal = self.reward_band;
             averages.iter().for_each(|f| log::info!("{} {}", f.0, f.1));
-            let uusd = averages.get("uusd").unwrap();
-            self.validator_vote_prices.iter().for_each(|f| {
-                if let Some(uusd_coin) =
-                    f.1.iter()
-                        .filter(|c| c.denom == "uusd")
-                        .collect::<Vec<_>>()
-                        .first()
-                {
-                    let uusd_price = uusd_coin.amount;
-                    println!(
-                        "Validator:{}\tsupplied:{}\tAverage:{}\tdrift:{}",
-                        f.0,
-                        uusd_price,
-                        uusd,
-                        (uusd_price - uusd)
-                    );
-                } else {
-                    log::warn!("Validator: {} missing uusd", f.0);
-                }
-            })
+            averages.iter().for_each(|f| {
+                let denom = f.0;
+                let average_price = f.1;
+                let drift_max = average_price.mul(drift_max_perc).abs();
+                self.validator_vote_prices
+                    .iter()
+                    .for_each(|validator_price| {
+                        let operator_address = String::from(validator_price.0);
+                        if let Some(price_submitted_coin) = validator_price
+                            .1
+                            .iter()
+                            .filter(|c| c.denom.eq(denom))
+                            .collect::<Vec<_>>()
+                            .first()
+                        {
+                            let submitted_price = price_submitted_coin.amount;
+                            if submitted_price > Decimal::from_f64(0.001f64).unwrap() {
+                                let drift = submitted_price - average_price;
+                                if drift.abs() > drift_max {
+                                    let txhash = self
+                                        .validator_vote_last_hash
+                                        .get(&operator_address)
+                                        .map(String::from)
+                                        .unwrap_or("-missing hash-".into());
+
+                                    log::debug!(
+                                        "Drift detected {} {} {} {} {}/{} - {}",
+                                        operator_address,
+                                        denom,
+                                        submitted_price,
+                                        average_price,
+                                        drift,
+                                        drift_max,
+                                        txhash
+                                    );
+
+                                    Broker::<SystemBroker>::issue_async(MessagePriceDrift {
+                                        height,
+                                        operator_address: operator_address.clone(),
+                                        denom: denom.into(),
+                                        average: *average_price,
+                                        submitted: submitted_price,
+                                        txhash: txhash.clone(),
+                                    });
+                                }
+                            }
+                        } else {
+                            log::warn!("Validator: {} missing denom {}", f.0, denom);
+                        }
+                    })
+            });
         }
     }
 }
@@ -101,6 +155,7 @@ impl Handler<MessageTX> for OracleActor {
         let height = msg.tx.height;
         if msg.tx.tx.s_type == "core/StdTx" {
             let messages = msg.tx.tx.value;
+            let txhash = msg.tx.txhash.clone();
             messages.msg.iter().for_each(|message| {
                 if message.s_type == "oracle/MsgAggregateExchangeRateVote" {
                     let v = serde_json::from_value::<MsgAggregateExchangeRateVote>(
@@ -115,6 +170,8 @@ impl Handler<MessageTX> for OracleActor {
                                         .insert(vote.validator.clone(), height);
                                     self.validator_vote_prices
                                         .insert(vote.validator.clone(), rates);
+                                    self.validator_vote_last_hash
+                                        .insert(vote.validator.clone(), txhash.clone());
                                 }
                                 Err(e) => {
                                     log::error!(
@@ -134,7 +191,7 @@ impl Handler<MessageTX> for OracleActor {
             log::info!("Height: {} Type {}", msg.tx.height, msg.tx.tx.s_type);
         }
         if height >= self.last_avg_at_height + self.vote_period {
-            self.do_price_averages();
+            self.do_price_averages(height);
             let laggy = self
                 .validator_vote_last_seen
                 .iter()
@@ -160,6 +217,7 @@ impl Handler<MessageTX> for OracleActor {
                 .collect();
 
             self.validator_vote_prices = Default::default();
+            self.validator_vote_last_hash = Default::default();
             self.last_avg_at_height = height;
         }
     }

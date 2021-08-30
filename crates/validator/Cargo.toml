@@ -1,9 +1,11 @@
 [package]
-name = "constellation-observer"
+name = "constellation-validator"
 version = "0.1.0"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
 [features]
 default = ["native-tls"]
 native-tls = [ "tokio-tungstenite/tokio-native-tls","tokio-tungstenite/native-tls"]
@@ -26,4 +28,4 @@ actix-rt="2.2.0"
 actix-broker = "0.4.1"
 chrono = "0.4.19"
 rust_decimal="1.15.0"
-rust_decimal_macros = "1.15.0"
+constellation-observer={path="../observer", version="0.1"}
