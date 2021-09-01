@@ -4,3 +4,4 @@
 /db/GeoLite2-City.mmdb
 /*.json
 /output.txt
+/.env

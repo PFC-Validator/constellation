@@ -1,0 +1,36 @@
+[package]
+name = "constellation-discord"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = ["native-tls"]
+native-tls = [ "serenity/native_tls_backend", "serenity/default_native_tls"]
+rustls-tls = [ "serenity/rustls_backend"]
+
+[dependencies]
+constellation-shared= {path="../shared", version ="0.1"}
+constellation-observer={path="../observer", version="0.1"}
+tokio = { version = "1.10", features = ["macros", "rt-multi-thread"] }
+log = "0.4.14"
+anyhow = "1.0"
+thiserror = "1.0.28"
+futures = "0.3.16"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+actix="0.12.0"
+actix-rt="2.2.0"
+actix-broker = "0.4.1"
+chrono = "0.4.19"
+rust_decimal="1.15.0"
+#openssl="0.10.36"
+serenity = { version = "0.10", default-features = false, features = [ "client",  "gateway", "model","http"] }
+#serenity = { version = "0.9", default-features = false, features = ["builder", "client", "gateway", "http", "model"] }
+
+#discord={version ="0.8.1", default-features=false}
+#[dependencies.discord]
+#version = "0.9"
+#git="https://github.com/SpaceManiac/discord-rs"
+#path="../../../../src_other/discord-rs"
+#default-features=false

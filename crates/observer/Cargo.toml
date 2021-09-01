@@ -12,7 +12,6 @@ rustls-tls = [ "tokio-tungstenite/tokio-rustls", "tokio-tungstenite/rustls"]
 [dependencies]
 tokio-tungstenite = { version = "0.15.0", features = ["tokio-native-tls", "native-tls"]} #, features = ["connect", "stream"], default-features = true }
 constellation-shared= {path="../shared", version ="0.1"}
-
 terra-rust-api = { version = "0.3.4", path= "../../../terra-rust/terra-rust-api" }
 tokio = { version = "1.10", features = ["full"] }
 log = "0.4.14"

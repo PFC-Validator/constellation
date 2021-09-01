@@ -141,6 +141,11 @@ async fn run() -> anyhow::Result<()> {
         "wss://observer.terra.dev/".into(),
     )));
 
+    tasks.push(tokio::task::spawn(constellation_discord::run(
+        state.clone(),
+        Duration::from_secs(60 * 5),
+    )));
+
     let web_join = actix_rt::spawn(tasks::web::run(state.clone(), tx_web));
 
     let oracle_actor =

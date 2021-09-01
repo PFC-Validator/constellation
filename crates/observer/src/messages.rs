@@ -43,10 +43,31 @@ pub struct MessageValidatorStakedDelta {
     pub token_delta: Decimal,
 }
 
+/// Sent when system refreshes validator record via LCD
 #[derive(Clone, Debug, Message)]
 #[rtype(result = "()")]
 pub struct MessageValidator {
     pub height: u64,
     pub operator_address: String,
     pub validator: Validator,
+}
+
+/// Sent when system wants to notify places that an event on a validator occurred
+#[derive(Clone, Debug)]
+pub enum ValidatorEventType {
+    TRACE,
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR,
+    CRITICAL,
+}
+#[derive(Clone, Debug, Message)]
+#[rtype(result = "()")]
+pub struct MessageValidatorEvent {
+    pub height: u64,
+    pub operator_address: String,
+    pub moniker: String,
+    pub event_type: ValidatorEventType,
+    pub message: String,
 }
