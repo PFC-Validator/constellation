@@ -1,6 +1,4 @@
-use crate::actor::validator::DiscordValidatorActor;
 use crate::errors::ConstellationDiscordError::ChannelList;
-use actix::Actor;
 use anyhow::Result;
 use serde_json::Value;
 use serenity::model::guild::GuildStatus;
@@ -12,10 +10,10 @@ use serenity::{
 };
 use std::env;
 
-pub(crate) struct Handler;
+pub(crate) struct SerentityHandler;
 
 #[async_trait]
-impl EventHandler for Handler {
+impl EventHandler for SerentityHandler {
     // Set a handler for the `message` event - so that whenever a new message
     // is received - the closure (or function) passed will be called.
     //
@@ -63,14 +61,6 @@ impl EventHandler for Handler {
         let guilds = ctx.cache.guilds().await;
         //   let guild_opt = guilds.first();
         if let Some(guildid) = guilds.first() {
-            match DiscordValidatorActor::create(&ctx.http.token, guildid, &category_name).await {
-                Ok(discord_actor) => {
-                    discord_actor.start();
-                    log::info!("Discord Actor started")
-                }
-                Err(e) => log::error!("Starting Discord actor:{}", e),
-            }
-
             match find_or_create_validator_channel_categories(&ctx, guildid, &category_name).await {
                 Ok(channel_id) => log::info!("Channel ID: {}", channel_id),
                 Err(e) => log::error!("Channel:{}", e),
