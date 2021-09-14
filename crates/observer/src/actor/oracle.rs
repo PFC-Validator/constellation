@@ -110,9 +110,13 @@ impl OracleActor {
                 })
                 .collect();
             let drift_max_percentage: Decimal = self.reward_band;
-            averages
-                .iter()
-                .for_each(|f| log::info!("{} AVG:{:.4}\t Weighted:{:.4}", f.0, f.1 .0, f.1 .1));
+            averages.iter().for_each(|f| {
+                if f.0 == "uusd" {
+                    log::info!("{} AVG:{:.4}\t Weighted:{:.4}", f.0, f.1 .0, f.1 .1)
+                } else {
+                    log::debug!("{} AVG:{:.4}\t Weighted:{:.4}", f.0, f.1 .0, f.1 .1)
+                }
+            });
             averages.iter().for_each(|f| {
                 let denom = f.0;
                 let average_price = f.1 .0;
@@ -162,23 +166,6 @@ impl OracleActor {
                                         submitted: submitted_price,
                                         txhash,
                                     });
-                                } else {
-                                    /*
-                                    if operator_address
-                                        == "terravaloper12g4nkvsjjnl0t7fvq3hdcw7y8dc9fq69nyeu9q"
-                                    {
-                                        Broker::<SystemBroker>::issue_async(
-                                            MessageValidatorEvent {
-                                                height,
-                                                operator_address: operator_address.clone(),
-                                                moniker: "pfc-test".into(),
-                                                event_type: ValidatorEventType::INFO,
-                                                message: "This is a test".into(),
-                                            },
-                                        );
-                                    }
-
-                                     */
                                 }
                             }
                         } else {

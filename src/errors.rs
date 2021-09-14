@@ -6,6 +6,4 @@ pub enum ConstellationError {
     _ResponseError(String),
     #[error(transparent)]
     URLParseError(#[from] url::ParseError),
-    #[error("Bad IP ? {0}")]
-    BadIp(String),
 }

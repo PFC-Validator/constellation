@@ -22,12 +22,11 @@ reqwest = { version = "0.11", features = ["json"], default-features = false }
 anyhow = "1.0"
 thiserror = "1.0"
 url = "2.2.2"
-trust-dns-resolver = "0.20.3"
-terra-rust-api = { version = "0.3.4"} #, path= "../terra-rust/terra-rust-api" }
+#terra-rust-api = { version = "0.3.4"} #, path= "../terra-rust/terra-rust-api" }
 structopt = "0.3"
 chrono = "0.4.19"
 futures = "0.3.16"
-maxminddb = "0.21.0"
+
 actix="0.12.0"
 actix-web = "4.0.0-beta.8"
 actix-rt = "2.2.0"
@@ -36,13 +35,21 @@ rust_decimal = "1.15.0"
 rust_decimal_macros = "1.15.0"
 httparse="1.5.1"
 
-#actor-discord = { version="0.1"}# path = "../actor-discord" }
-
 constellation-shared={ path = "./crates/shared", version = "0.1"}
 constellation-observer={ path = "./crates/observer", version = "0.1"}
 constellation-validator={ path = "./crates/validator", version = "0.1"}
 constellation-discord={ path = "./crates/discord", version = "0.1"}
-
+constellation-bgp={ path = "./crates/bgp", version = "0.1"}
+constellation-geo={path="./crates/geo", version="0.1"}
+constellation-address-book={path="./crates/address_book", version="0.1"}
+constellation-rpc-crawler={path="./crates/rpc_crawler", version="0.1"}
+constellation-state-checkpoint={path="./crates/state_checkpoint", version="0.1"}
+constellation-web={path="./crates/web", version="0.1"}
 
 [workspace]
-members=["crates/observer", "crates/shared", "crates/validator", "crates/discord"]
+members=["crates/observer", "crates/shared",
+    "crates/validator", "crates/discord",
+    "crates/bgp", "crates/geo",
+    "crates/address_book","crates/rpc_crawler",
+    "crates/state_checkpoint", "crates/web"
+]

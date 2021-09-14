@@ -9,15 +9,16 @@ use constellation_shared::state::AppState;
 pub async fn run(
     _state: AppState,
     discord_token: String,
-    _discord_category_name: String,
+    //  _discord_category_name: String,
     discord_url: String, // _period: Duration,
+    max_retries: usize,
 ) {
     let intents: GatewayIntents = GatewayIntents::GUILDS
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::GUILD_MESSAGE_REACTIONS
         | GatewayIntents::DIRECT_MESSAGE_REACTIONS;
-    match DiscordAPI::create(&discord_token, &discord_url) {
+    match DiscordAPI::create(&discord_token, &discord_url, max_retries) {
         Ok(discord_api) => match DiscordBot::create(&discord_api, intents).await {
             Ok(mut discord_bot) => match discord_bot.start_websocket().await {
                 Ok(_) => {}

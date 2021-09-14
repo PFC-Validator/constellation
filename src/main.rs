@@ -86,11 +86,10 @@ async fn run() -> anyhow::Result<()> {
     let discord_token =
         env::var("DISCORD_TOKEN").expect("Expected a discord token in the environment");
     let discord_url = env::var("DISCORD_URL").expect("Expected a discord URL in the environment");
-    let discord_category_name =
-        env::var("DISCORD_CATEGORY_NAME").unwrap_or_else(|_| "Validators".into());
 
-    //    let local = tokio::task::LocalSet::new();
-
+    let discord_retries: usize = env::var("DISCORD_RETRIES")
+        .unwrap_or_else(|_| "4".into())
+        .parse()?;
     let state_data = match State::restore(&cli.state_file) {
         Ok(versioned) => match versioned {
             StateVersion::StateVersion1(state_v1) => state_v1,
@@ -109,26 +108,26 @@ async fn run() -> anyhow::Result<()> {
     let (tx_web, _rx_web) = mpsc::channel::<Server>();
     //    let (tx_observer, rx_observer) = mpsc::channel::<()>();
 
-    tasks.push(tokio::task::spawn(tasks::address_book::run(
+    tasks.push(tokio::task::spawn(constellation_address_book::run(
         state.clone(),
         Duration::from_secs(60 * 5),
         cli.address_book,
     )));
-    tasks.push(tokio::task::spawn(tasks::bgp_filler::run(
+    tasks.push(tokio::task::spawn(constellation_bgp::run(
         state.clone(),
         Duration::from_secs(60 * 5),
     )));
-    tasks.push(tokio::task::spawn(tasks::state_checkpoint::run(
+    tasks.push(tokio::task::spawn(constellation_state_checkpoint::run(
         state.clone(),
         Duration::from_secs(60),
         cli.state_file,
     )));
-    tasks.push(tokio::task::spawn(tasks::geo_filler::run(
+    tasks.push(tokio::task::spawn(constellation_geo::run(
         state.clone(),
         Duration::from_secs(60 * 5),
         cli.db_file,
     )));
-    tasks.push(tokio::task::spawn(tasks::rpc_crawler::run(
+    tasks.push(tokio::task::spawn(constellation_rpc_crawler::run(
         state.clone(),
         Duration::from_secs(60 * 5),
         cli.chain_id.clone(),
@@ -150,11 +149,12 @@ async fn run() -> anyhow::Result<()> {
     let bot = actix_rt::spawn(constellation_discord::run(
         state.clone(),
         discord_token.clone(),
-        discord_category_name.clone(),
+        //  discord_category_name.clone(),
         discord_url.clone(),
+        discord_retries,
     ));
 
-    let web_join = actix_rt::spawn(tasks::web::run(state.clone(), tx_web));
+    let web_join = actix_rt::spawn(constellation_web::run(state.clone(), tx_web));
 
     let oracle_actor =
         constellation_observer::actor::OracleActor::create(&cli.lcd_endpoint, &cli.chain_id)
@@ -166,8 +166,8 @@ async fn run() -> anyhow::Result<()> {
     validator_actor.start();
     let discord_actor = constellation_discord::actor::DiscordValidatorActor::create(
         &discord_token,
-        &discord_category_name,
         &discord_url,
+        discord_retries,
     )
     .await?;
     discord_actor.start();

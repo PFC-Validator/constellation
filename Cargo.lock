@@ -254,9 +254,7 @@ dependencies = [
 
 [[package]]
 name = "actor-discord"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8f840eef4f6951bfec4ad30f663d05dca5336edc53aed8e159b0ec29efaf687"
+version = "0.2.0"
 dependencies = [
  "actix",
  "actix-broker",
@@ -576,27 +574,70 @@ dependencies = [
  "actix-web",
  "anyhow",
  "chrono",
+ "constellation-address-book",
+ "constellation-bgp",
  "constellation-discord",
+ "constellation-geo",
  "constellation-observer",
+ "constellation-rpc-crawler",
  "constellation-shared",
+ "constellation-state-checkpoint",
  "constellation-validator",
+ "constellation-web",
  "dotenv",
  "env_logger",
  "futures",
  "httparse",
  "log",
- "maxminddb",
  "reqwest",
  "rust_decimal",
  "rust_decimal_macros",
  "serde",
  "serde_json",
  "structopt",
+ "thiserror",
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "constellation-address-book"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-broker",
+ "actix-rt",
+ "anyhow",
+ "chrono",
+ "constellation-shared",
+ "futures",
+ "log",
+ "rust_decimal",
+ "serde",
+ "serde_json",
  "terra-rust-api",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "constellation-bgp"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-broker",
+ "actix-rt",
+ "anyhow",
+ "chrono",
+ "constellation-shared",
+ "futures",
+ "log",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
  "trust-dns-resolver",
- "url",
 ]
 
 [[package]]
@@ -613,6 +654,26 @@ dependencies = [
  "constellation-shared",
  "futures",
  "log",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "constellation-geo"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-broker",
+ "actix-rt",
+ "anyhow",
+ "chrono",
+ "constellation-shared",
+ "futures",
+ "log",
+ "maxminddb",
  "rust_decimal",
  "serde",
  "serde_json",
@@ -643,6 +704,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "constellation-rpc-crawler"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-broker",
+ "actix-rt",
+ "anyhow",
+ "chrono",
+ "constellation-shared",
+ "futures",
+ "log",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "terra-rust-api",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "constellation-shared"
 version = "0.1.0"
 dependencies = [
@@ -652,6 +733,25 @@ dependencies = [
  "serde",
  "serde_json",
  "terra-rust-api",
+]
+
+[[package]]
+name = "constellation-state-checkpoint"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-broker",
+ "actix-rt",
+ "anyhow",
+ "chrono",
+ "constellation-shared",
+ "futures",
+ "log",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -674,6 +774,27 @@ dependencies = [
  "terra-rust-api",
  "tokio",
  "tokio-tungstenite",
+]
+
+[[package]]
+name = "constellation-web"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-broker",
+ "actix-rt",
+ "actix-web",
+ "anyhow",
+ "chrono",
+ "constellation-shared",
+ "futures",
+ "log",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "terra-rust-api",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]

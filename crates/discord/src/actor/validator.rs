@@ -31,17 +31,19 @@ pub struct DiscordValidatorActor {
     pub discord_validator_map: HashMap<SnowflakeID, String>, // discord channel id -> operator id
     pub validator_discord_map: HashMap<String, SnowflakeID>, // operator id -> discord channel id
     pub validator_moniker_map: HashMap<String, String>, // operator id -> moniker
-    pub category_prefix: String,
+    //   pub category_prefix: String,
     pub token: String,
     pub connect_addr: String,
     pub announcement_channel: Option<GuildChannel>,
+    pub max_retries: usize,
 }
 
 impl DiscordValidatorActor {
     pub async fn create(
         token: &str,
-        category_prefix: &str,
+        //   category_prefix: &str,
         connect_addr: &str,
+        max_retries: usize,
     ) -> anyhow::Result<DiscordValidatorActor> {
         log::info!("Discord Starting");
 
@@ -49,7 +51,7 @@ impl DiscordValidatorActor {
             channel_last_alert: Default::default(),
             channel_last_seen: Default::default(),
             channel_map: Default::default(),
-            category_prefix: category_prefix.into(),
+            //         category_prefix: category_prefix.into(),
             token: token.into(),
             connect_addr: connect_addr.into(),
             discord_validator_map: Default::default(),
@@ -57,6 +59,7 @@ impl DiscordValidatorActor {
             validator_moniker_map: Default::default(),
             guild_id: None,
             announcement_channel: None,
+            max_retries,
         })
     }
 }
@@ -90,7 +93,7 @@ impl Handler<MessageValidator> for DiscordValidatorActor {
         let sanitized = DiscordAPI::sanitize(&msg.validator.description.moniker);
         if let Some(guild) = self.guild_id {
             if !self.channel_map.contains_key(&sanitized) {
-                match DiscordAPI::create(&self.token, &self.connect_addr) {
+                match DiscordAPI::create(&self.token, &self.connect_addr, self.max_retries) {
                     Ok(discord_api) => {
                         let details = GuildChannelCreate::simple(
                             ChannelType::GuildText,
@@ -192,7 +195,7 @@ impl Handler<MessageValidatorEvent> for DiscordValidatorActor {
         let formatted_message = format!("Height:{} {}", height, &msg.message);
         log::debug!("WE have a message! {} {}", &moniker, msg.message);
         if let Some(channel_id) = channel_opt {
-            match DiscordAPI::create(&self.token, &self.connect_addr) {
+            match DiscordAPI::create(&self.token, &self.connect_addr, self.max_retries) {
                 Ok(api) => {
                     let message = MessageCreate::markdown(formatted_message, &hash_url);
                     let channel = *channel_id;

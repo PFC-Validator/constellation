@@ -1,5 +1,5 @@
 [package]
-name = "constellation-discord"
+name = "constellation-address-book"
 version = "0.1.0"
 edition = "2018"
 
@@ -11,7 +11,6 @@ edition = "2018"
 
 [dependencies]
 constellation-shared= {path="../shared", version ="0.1"}
-constellation-observer={path="../observer", version="0.1"}
 tokio = { version = "1.10", features = ["macros", "rt-multi-thread"] }
 log = "0.4.14"
 anyhow = "1.0"
@@ -24,5 +23,5 @@ actix-rt="2.2.0"
 actix-broker = "0.4.1"
 chrono = "0.4.19"
 rust_decimal="1.15.0"
-#openssl="0.10.36"
-actor-discord = { version="0.2.0", path = "../../../actor-discord" }
+
+terra-rust-api = { version = "0.3.4"} #, path= "../terra-rust/terra-rust-api" }

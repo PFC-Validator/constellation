@@ -1,4 +1,4 @@
-use crate::errors::ConstellationError::BadIp;
+use crate::errors::ConstellationBGPError::BadIp;
 use chrono::Utc;
 use constellation_shared::state::{AppState, IpAsnMapping, ASN};
 use std::collections::{HashMap, HashSet};
