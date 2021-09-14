@@ -33,7 +33,7 @@ pub async fn run(state: AppState, _tx: mpsc::Sender<Server>) {
                 web::resource("/ip/{ip:\\d+\\.\\d+\\.\\d+\\.\\d+}").route(web::get().to(ip_detail)),
             )
     })
-    .bind("127.0.0.1:8080");
+    .bind("0.0.0.0:8080");
     match srv {
         Ok(server) => {
             let s = server.run();
