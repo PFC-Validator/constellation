@@ -255,6 +255,8 @@ dependencies = [
 [[package]]
 name = "actor-discord"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8f840eef4f6951bfec4ad30f663d05dca5336edc53aed8e159b0ec29efaf687"
 dependencies = [
  "actix",
  "actix-broker",
@@ -572,7 +574,6 @@ dependencies = [
  "actix-broker",
  "actix-rt",
  "actix-web",
- "actor-discord",
  "anyhow",
  "chrono",
  "constellation-discord",
@@ -2558,6 +2559,8 @@ dependencies = [
 [[package]]
 name = "terra-rust-api"
 version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2614c78fb52c16298ebd25a0b9eae6885dc6195de114ff69158ef22932cac91b"
 dependencies = [
  "anyhow",
  "base64",

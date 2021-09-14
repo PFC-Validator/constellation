@@ -25,4 +25,4 @@ actix-broker = "0.4.1"
 chrono = "0.4.19"
 rust_decimal="1.15.0"
 #openssl="0.10.36"
-actor-discord = { path = "../../../actor-discord" }
+actor-discord = { version="0.1.0"} #path = "../../../actor-discord" }
