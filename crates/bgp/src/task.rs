@@ -7,86 +7,87 @@ use tokio::time;
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use trust_dns_resolver::TokioAsyncResolver;
 
-pub async fn run(state: AppState, period: Duration) -> anyhow::Result<()> {
+pub async fn run(state: AppState, period: Duration) {
     let mut interval = time::interval(period);
 
-    let resolver = &TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default())?;
-
-    loop {
-        let mut ips_tbd: Vec<String> = vec![];
-        let mut work_ip_asn: HashMap<String, IpAsnMapping> = HashMap::new();
-        let mut work_asn: HashMap<String, ASN>;
-        {
-            let the_state = state.lock().unwrap();
-            for ip in &the_state.new_ips_bgp {
-                if !the_state.ip_asn.contains_key(ip) {
-                    ips_tbd.push(ip.to_string());
-                }
-            }
-            work_asn = the_state.asn.clone();
-        }
-        if !ips_tbd.is_empty() {
+    match &TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default()) {
+        Ok(resolver) => loop {
+            let mut ips_tbd: Vec<String> = vec![];
+            let mut work_ip_asn: HashMap<String, IpAsnMapping> = HashMap::new();
+            let mut work_asn: HashMap<String, ASN>;
             {
-                log::info!("New IPS = {}", ips_tbd.len());
-                for ip in ips_tbd {
-                    match grab_asn_for_ip(resolver, &ip).await {
-                        Ok(ip_asn_det) => match ip_asn_det {
-                            Some(det) => {
-                                log::info!("Filled in IP {}", ip);
-                                work_ip_asn.insert(ip.to_string(), det.clone());
-                                if !work_asn.contains_key(&det.asn) {
-                                    match grab_asn_details(resolver, &det.asn).await {
-                                        Ok(asn_det) => match asn_det {
-                                            Some(a) => {
-                                                let mut the_state = state.lock().unwrap();
-                                                work_asn.insert(det.asn.clone(), a.clone());
-                                                the_state.asn.insert(det.asn.clone(), a);
+                let the_state = state.lock().unwrap();
+                for ip in &the_state.new_ips_bgp {
+                    if !the_state.ip_asn.contains_key(ip) {
+                        ips_tbd.push(ip.to_string());
+                    }
+                }
+                work_asn = the_state.asn.clone();
+            }
+            if !ips_tbd.is_empty() {
+                {
+                    log::info!("New IPS = {}", ips_tbd.len());
+                    for ip in ips_tbd {
+                        match grab_asn_for_ip(resolver, &ip).await {
+                            Ok(ip_asn_det) => match ip_asn_det {
+                                Some(det) => {
+                                    log::info!("Filled in IP {}", ip);
+                                    work_ip_asn.insert(ip.to_string(), det.clone());
+                                    if !work_asn.contains_key(&det.asn) {
+                                        match grab_asn_details(resolver, &det.asn).await {
+                                            Ok(asn_det) => match asn_det {
+                                                Some(a) => {
+                                                    let mut the_state = state.lock().unwrap();
+                                                    work_asn.insert(det.asn.clone(), a.clone());
+                                                    the_state.asn.insert(det.asn.clone(), a);
+                                                }
+                                                None => {
+                                                    log::info!("ASN - no response {}", &det.asn);
+                                                }
+                                            },
+                                            Err(e) => {
+                                                log::error!(
+                                                    "Fetching info for ASN AS{} - {}",
+                                                    &det.asn,
+                                                    e.to_string()
+                                                );
+                                            }
+                                        };
+                                    }
+                                    {
+                                        let mut the_state = state.lock().unwrap();
+                                        the_state.ip_asn.insert(ip.clone(), det.clone());
+                                        the_state.new_ips_bgp.remove(&ip);
+                                        match the_state.asn_ip.get(&det.asn) {
+                                            Some(set) => {
+                                                let mut new_set = set.clone();
+                                                new_set.insert(ip);
+                                                the_state.asn_ip.insert(det.asn, new_set.clone());
                                             }
                                             None => {
-                                                log::info!("ASN - no response {}", &det.asn);
+                                                let mut set: HashSet<String> = HashSet::new();
+                                                set.insert(ip);
+                                                the_state.asn_ip.insert(det.asn, set.clone());
                                             }
-                                        },
-                                        Err(e) => {
-                                            log::error!(
-                                                "Fetching info for ASN AS{} - {}",
-                                                &det.asn,
-                                                e.to_string()
-                                            );
-                                        }
-                                    };
-                                }
-                                {
-                                    let mut the_state = state.lock().unwrap();
-                                    the_state.ip_asn.insert(ip.clone(), det.clone());
-                                    the_state.new_ips_bgp.remove(&ip);
-                                    match the_state.asn_ip.get(&det.asn) {
-                                        Some(set) => {
-                                            let mut new_set = set.clone();
-                                            new_set.insert(ip);
-                                            the_state.asn_ip.insert(det.asn, new_set.clone());
-                                        }
-                                        None => {
-                                            let mut set: HashSet<String> = HashSet::new();
-                                            set.insert(ip);
-                                            the_state.asn_ip.insert(det.asn, set.clone());
                                         }
                                     }
                                 }
+                                None => {
+                                    log::info!("Filled in IP {} - no response", ip);
+                                }
+                            },
+                            Err(e) => {
+                                log::error!("Fetching info for IP {} - {}", ip, e.to_string())
                             }
-                            None => {
-                                log::info!("Filled in IP {} - no response", ip);
-                            }
-                        },
-                        Err(e) => {
-                            log::error!("Fetching info for IP {} - {}", ip, e.to_string())
                         }
                     }
                 }
+            } else {
+                log::info!("No new IPs to scan");
             }
-        } else {
-            log::info!("No new IPs to scan");
-        }
-        interval.tick().await;
+            interval.tick().await;
+        },
+        Err(e) => log::error!("Unable to start BGP {}", e),
     }
 }
 

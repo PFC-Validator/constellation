@@ -2,7 +2,7 @@ use chrono::Utc;
 use constellation_shared::state::AppState;
 use std::time::Duration;
 use tokio::time;
-pub async fn run(state: AppState, period: Duration, checkpoint_file: String) -> anyhow::Result<()> {
+pub async fn run(state: AppState, period: Duration, checkpoint_file: String) {
     let mut interval = time::interval(period);
 
     loop {

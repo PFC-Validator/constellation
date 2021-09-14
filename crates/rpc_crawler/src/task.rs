@@ -9,10 +9,7 @@ pub async fn run(
     chain_id: String,
     lcd_endpoint: String,
     rpc_endpoint: String,
-    //  fcd_endpoint: String,
-    //gas_denom: String,
-    // gas_multiplier: f64,
-) -> anyhow::Result<()> {
+) {
     log::info!("{} {}", lcd_endpoint, rpc_endpoint);
     let mut interval = time::interval(period);
     loop {

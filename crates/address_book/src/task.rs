@@ -6,11 +6,7 @@ use std::collections::HashSet;
 use std::time::Duration;
 use tokio::time;
 
-pub async fn run(
-    state: AppState,
-    period: Duration,
-    address_book_url: String,
-) -> anyhow::Result<()> {
+pub async fn run(state: AppState, period: Duration, address_book_url: String) {
     let mut interval = time::interval(period);
     loop {
         match grab_address_book(&address_book_url).await {
