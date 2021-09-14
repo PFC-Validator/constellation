@@ -6,6 +6,7 @@ use terra_rust_api::core_types::Coin;
 use terra_rust_api::{terra_datetime_format, terra_u64_format};
 
 use crate::b64::{b64_format, b64_o_format};
+use serde_json::Value;
 
 /// new_block type from observer
 #[derive(Deserialize, Serialize, Debug)]
@@ -109,7 +110,7 @@ pub struct PubKey {
 pub struct TransactionSignaturePubKey {
     #[serde(rename = "type")]
     pub s_type: String,
-    pub value: String,
+    pub value: Value, // this can either be a string, or a array if type == tendermint/PubKeyMultisigThreshold
 }
 #[derive(Deserialize, Serialize, Debug)]
 pub struct NewBlockValidatorUpdate {

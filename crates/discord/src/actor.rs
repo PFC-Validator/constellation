@@ -1,1 +1,2 @@
-pub mod validator;
+mod validator;
+pub use validator::DiscordValidatorActor;

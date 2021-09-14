@@ -9,6 +9,7 @@ use structopt::StructOpt;
 use tokio::task::JoinHandle;
 
 use constellation_shared::state::{AppState, State, StateVersion};
+use std::env;
 
 mod errors;
 mod tasks;
@@ -82,6 +83,12 @@ struct Cli {
 
 async fn run() -> anyhow::Result<()> {
     let cli: Cli = Cli::from_args();
+    let discord_token =
+        env::var("DISCORD_TOKEN").expect("Expected a discord token in the environment");
+    let discord_url = env::var("DISCORD_URL").expect("Expected a discord URL in the environment");
+    let discord_category_name =
+        env::var("DISCORD_CATEGORY_NAME").unwrap_or_else(|_| "Validators".into());
+
     //    let local = tokio::task::LocalSet::new();
 
     let state_data = match State::restore(&cli.state_file) {
@@ -140,11 +147,12 @@ async fn run() -> anyhow::Result<()> {
         //tx_observer,
         "wss://observer.terra.dev/".into(),
     )));
-
-    tasks.push(tokio::task::spawn(constellation_discord::run(
+    let bot = actix_rt::spawn(constellation_discord::run(
         state.clone(),
-        Duration::from_secs(60 * 5),
-    )));
+        discord_token.clone(),
+        discord_category_name.clone(),
+        discord_url.clone(),
+    ));
 
     let web_join = actix_rt::spawn(tasks::web::run(state.clone(), tx_web));
 
@@ -156,6 +164,13 @@ async fn run() -> anyhow::Result<()> {
         constellation_validator::actor::ValidatorActor::create(&cli.lcd_endpoint, &cli.chain_id)
             .await?;
     validator_actor.start();
+    let discord_actor = constellation_discord::actor::DiscordValidatorActor::create(
+        &discord_token,
+        &discord_category_name,
+        &discord_url,
+    )
+    .await?;
+    discord_actor.start();
     // TODO - respawn failed tasks
     let returns = futures::future::join_all(tasks).await;
     returns
@@ -173,6 +188,7 @@ async fn run() -> anyhow::Result<()> {
             }
         });
     web_join.await?;
+    bot.await?;
     Ok(())
 }
 //#[tokio::main]

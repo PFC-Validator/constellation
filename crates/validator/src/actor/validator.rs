@@ -8,7 +8,8 @@ use terra_rust_api::staking_types::Validator;
 use terra_rust_api::Terra;
 
 use constellation_observer::messages::{
-    MessagePriceAbstain, MessagePriceDrift, MessageValidator, MessageValidatorStakedTotal,
+    MessagePriceAbstain, MessagePriceDrift, MessageValidator, MessageValidatorEvent,
+    MessageValidatorStakedTotal, ValidatorEventType,
 };
 use constellation_observer::BrokerType;
 use std::collections::hash_map::Entry;
@@ -128,19 +129,27 @@ impl Handler<MessagePriceAbstain> for ValidatorActor {
         match self.validators.entry(msg.operator_address.clone()) {
             Entry::Occupied(mut e) => {
                 let mut v = e.get_mut();
-                v.abstains = v.abstains + 1;
+                v.abstains += 1;
                 v.last_updated_block = height;
                 v.last_updated_date = now;
                 //   e.into_mut();
-                log::debug!(
-                    "{} '{}' {} has abstained from voting for this denomination Abstains:{} Drifts:{} - {}",
-                    height,
-                    v.validator.description.moniker,
-                    msg.denom,
+                let message = format!(
+                    "abstained from voting for denominations:{} Abstains:{} Drifts:{}",
+                    //height,
+                    //   v.validator.description.moniker,
+                    msg.denoms.join(","),
                     v.abstains,
                     v.drifts,
-                    msg.txhash,
+                    //  msg.txhash,
                 );
+                Broker::<SystemBroker>::issue_async(MessageValidatorEvent {
+                    height,
+                    operator_address: msg.operator_address.clone(),
+                    moniker: Some(v.validator.description.moniker.clone()),
+                    event_type: ValidatorEventType::INFO,
+                    message,
+                    hash: Some(msg.txhash),
+                });
             }
             Entry::Vacant(_) => {
                 log::error!("Validator not found ? {}", msg.operator_address)
@@ -157,22 +166,31 @@ impl Handler<MessagePriceDrift> for ValidatorActor {
         match self.validators.entry(msg.operator_address.clone()) {
             Entry::Occupied(mut e) => {
                 let mut v = e.get_mut();
-                v.drifts = v.drifts + 1;
+                v.drifts += 1;
                 v.last_updated_block = height;
                 v.last_updated_date = now;
-
-                log::info!(
-                    "{} '{}' {} price drift submitted {:.4} which is too far away from {:.4}/{:4} Abstains:{} Drifts:{}  - {}",
+                let message = format!("{} price drift submitted {:.4} too far away from Average:{:.4}/ Weighted:{:.4} Drifts:{}",    
+                                      //height,
+                                      //v.validator.description.moniker,
+                                      msg.denom,
+                                      msg.submitted,
+                                      msg.average,
+                                      msg.weighted_average,
+//                                      v.abstains,
+                                      v.drifts
+                                      )
+                    ;
+                if msg.denom == "uusd" {
+                    log::info!("{}", message);
+                }
+                Broker::<SystemBroker>::issue_async(MessageValidatorEvent {
                     height,
-                    v.validator.description.moniker,
-                    msg.denom,
-                    msg.submitted,
-                    msg.average,
-                    msg.weighted_average,
-                    v.abstains,
-                    v.drifts,
-                    msg.txhash
-                );
+                    operator_address: msg.operator_address.clone(),
+                    moniker: Some(v.validator.description.moniker.clone()),
+                    event_type: ValidatorEventType::WARN,
+                    message,
+                    hash: Some(msg.txhash),
+                });
             }
             Entry::Vacant(_) => {
                 log::error!("Validator not found ? {}", msg.operator_address)

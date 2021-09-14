@@ -25,7 +25,7 @@ pub struct MessagePriceDrift {
 pub struct MessagePriceAbstain {
     pub height: u64,
     pub operator_address: String,
-    pub denom: String,
+    pub denoms: Vec<String>,
     pub txhash: String,
 }
 #[derive(Clone, Debug, Message)]
@@ -67,7 +67,8 @@ pub enum ValidatorEventType {
 pub struct MessageValidatorEvent {
     pub height: u64,
     pub operator_address: String,
-    pub moniker: String,
+    pub moniker: Option<String>,
     pub event_type: ValidatorEventType,
     pub message: String,
+    pub hash: Option<String>,
 }

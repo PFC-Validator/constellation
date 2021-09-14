@@ -8,8 +8,8 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["native-tls"]
-native-tls = ["reqwest/native-tls", "constellation-observer/native-tls", "constellation-discord/native-tls"]
-rustls-tls = ["reqwest/rustls-tls", "constellation-observer/rustls-tls", "constellation-discord/rustls-tls"]
+native-tls = ["reqwest/native-tls", "constellation-observer/native-tls"]#, "constellation-discord/native-tls"]
+rustls-tls = ["reqwest/rustls-tls", "constellation-observer/rustls-tls"]#, "constellation-discord/rustls-tls"]
 
 [dependencies]
 tokio = { version = "1.10", features = ["full"] }
@@ -35,6 +35,9 @@ actix-broker = "0.4.1"
 rust_decimal = "1.15.0"
 rust_decimal_macros = "1.15.0"
 httparse="1.5.1"
+
+actor-discord = { path = "../actor-discord" }
+
 constellation-shared={ path = "./crates/shared", version = "0.1"}
 constellation-observer={ path = "./crates/observer", version = "0.1"}
 constellation-validator={ path = "./crates/validator", version = "0.1"}
