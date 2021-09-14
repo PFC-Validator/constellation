@@ -162,7 +162,7 @@ pub async fn run(state: AppState, period: Duration, db_filename: String) {
                 interval.tick().await;
             }
 
-            Err(e) => log::error!("Unable to start GEO {}", e),
+            Err(e) => panic!("Unable to start GEO {}", e),
         }
     }
 }
