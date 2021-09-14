@@ -229,7 +229,12 @@ async fn run() -> anyhow::Result<()> {
         tasks.push(bot);
         //bot.await?;
     }
-    let web_join = actix_rt::spawn(constellation_web::run(state.clone(), tx_web));
+    let web_join = actix_rt::spawn(constellation_web::run(
+        state.clone(),
+        tx_web,
+        NAME.unwrap_or("constellation"),
+        VERSION.unwrap_or("dev"),
+    ));
 
     // TODO - respawn failed tasks
 

@@ -4,21 +4,38 @@ use constellation_shared::state::{
     AppState, GeoCity, GeoContinent, GeoCountry, GeoID, IpAsnMapping, ASN,
 };
 
+/// VERSION number of package
+pub const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
+/// NAME of package
+pub const NAME: Option<&'static str> = option_env!("CARGO_PKG_NAME");
 use serde::Serialize;
 use std::collections::HashSet;
 use std::sync::mpsc;
 use terra_rust_api::addressbook::{NodeAddr, NodeIDIPPort};
 
-pub async fn run(state: AppState, _tx: mpsc::Sender<Server>) {
+pub async fn run(
+    state: AppState,
+    _tx: mpsc::Sender<Server>,
+    name: &'static str,
+    version: &'static str,
+) {
     // srv is server controller type, `dev::Server`
     let local = tokio::task::LocalSet::new();
 
     let srv = HttpServer::new(move || {
+        let version_string = format!(
+            "{}/{} Web:{}/{}",
+            name,
+            version,
+            NAME.unwrap_or("WEB"),
+            VERSION.unwrap_or("dev")
+        );
         App::new()
             .app_data(state.clone())
             // enable logger
             .wrap(middleware::Logger::default())
-            .service(web::resource("/index.html").to(|| async { "Hello world!" }))
+            .wrap(middleware::DefaultHeaders::new().header("X-Version", version_string))
+            .service(web::resource("/").to(|| async { "Hello world!" }))
             .service(web::resource("/city").route(web::get().to(cities)))
             .service(web::resource("/city/{id:\\d+}").route(web::get().to(city_detail)))
             .service(web::resource("/country").route(web::get().to(countries)))
