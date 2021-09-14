@@ -42,7 +42,7 @@ pub async fn run(state: AppState, _tx: mpsc::Sender<Server>) {
             // s.await?;
         }
         Err(e) => {
-            log::error!("Fail to start webserver {}", e);
+            panic!("Fail to start webserver {}", e);
         }
     }
 
