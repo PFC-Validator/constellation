@@ -72,7 +72,6 @@ pub async fn run(
                                                         e
                                                     );
                                                 }
-                                                //  process_block(&state, &new_block)?;
                                             }
                                             Err(e) => {
                                                 log::error!("Error parsing block: {}", e);
@@ -124,6 +123,16 @@ fn process_block_emit(block: &NewBlock) -> anyhow::Result<()> {
                 .for_each(|event| process_event(height, false, event));
         }
     }
+    let v = &block.data.result_end_block.validator_updates;
+    v.iter().for_each(|f| {
+        log::info!(
+            "Validator update: {} pub key:{}/{} power:{}",
+            height,
+            f.pub_key.s_type,
+            f.pub_key.data,
+            f.power
+        )
+    });
 
     Ok(())
 }
@@ -306,23 +315,26 @@ fn process_event(height: u64, is_begin: bool, event: &NewBlockEvent) {
         "complete_unbonding" => {
             let validator_o = get_required_kv(&attributes, "validator");
             let delegator_o = get_required_kv(&attributes, "delegator");
-
+            let amount_o = get_required_kv(&attributes, "amount");
             log::info!(
-                "complete_unbonding: {} {} {}",
+                "complete_unbonding: {} {} {} {}",
                 height,
                 validator_o.unwrap_or_default(),
-                delegator_o.unwrap_or_default()
+                delegator_o.unwrap_or_default(),
+                amount_o.unwrap_or_default()
             )
         }
         "complete_redelegation" => {
             let validator_o = get_required_kv(&attributes, "validator");
             let delegator_o = get_required_kv(&attributes, "delegator");
+            let amount_o = get_required_kv(&attributes, "amount");
 
             log::info!(
-                "complete_redelegation: {} {} {}",
+                "complete_redelegation: {} {} {} {}",
                 height,
                 validator_o.unwrap_or_default(),
-                delegator_o.unwrap_or_default()
+                delegator_o.unwrap_or_default(),
+                amount_o.unwrap_or_default()
             )
         }
         "mint" => {
