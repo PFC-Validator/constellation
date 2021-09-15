@@ -12,6 +12,7 @@ use constellation_observer::messages::{
     MessageValidatorStakedTotal, ValidatorEventType,
 };
 use constellation_observer::BrokerType;
+use constellation_shared::MessageStop;
 use std::collections::hash_map::Entry;
 
 #[derive(Clone, Debug)]
@@ -82,6 +83,17 @@ impl Actor for ValidatorActor {
         self.subscribe_sync::<BrokerType, MessagePriceDrift>(ctx);
         self.subscribe_sync::<BrokerType, MessagePriceAbstain>(ctx);
         self.subscribe_sync::<BrokerType, MessageValidator>(ctx);
+        //self.subscribe_sync::<BrokerType, MessageBeginBlock>(ctx);
+        //self.subscribe_sync::<BrokerType, MessageEndBlock>(ctx);
+        self.subscribe_sync::<BrokerType, MessageStop>(ctx);
+    }
+}
+impl Handler<MessageStop> for ValidatorActor {
+    type Result = ();
+
+    fn handle(&mut self, _msg: MessageStop, ctx: &mut Self::Context) {
+        log::info!("Validator Actor Stopping");
+        ctx.stop()
     }
 }
 
@@ -157,6 +169,7 @@ impl Handler<MessagePriceAbstain> for ValidatorActor {
         }
     }
 }
+
 impl Handler<MessagePriceDrift> for ValidatorActor {
     type Result = ();
 

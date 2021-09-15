@@ -7,6 +7,7 @@ use terra_rust_api::{terra_datetime_format, terra_u64_format};
 
 use crate::b64::{b64_format, b64_o_format};
 use serde_json::Value;
+use std::collections::HashMap;
 
 /// new_block type from observer
 #[derive(Deserialize, Serialize, Debug)]
@@ -77,30 +78,38 @@ pub struct TransactionSignature {
     pub signature: String,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct NewBlockBeginBlock {
     pub events: Vec<NewBlockEvent>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct NewBlockEvent {
     #[serde(rename = "type")]
     pub s_type: String,
     pub attributes: Vec<NewBlockAttributes>,
 }
-#[derive(Deserialize, Serialize, Debug)]
+impl NewBlockEvent {
+    pub fn attribute_map(&self) -> HashMap<String, Option<String>> {
+        self.attributes
+            .iter()
+            .map(|attr| (attr.key.clone(), attr.value.clone()))
+            .collect::<HashMap<String, Option<String>>>()
+    }
+}
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct NewBlockAttributes {
     #[serde(with = "b64_format")]
     pub key: String,
     #[serde(with = "b64_o_format")]
     pub value: Option<String>,
 }
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct NewBlockEndBlock {
     pub validator_updates: Vec<NewBlockValidatorUpdate>,
     pub events: Option<Vec<NewBlockEvent>>,
 }
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct PubKey {
     #[serde(rename = "type")]
     pub s_type: String,
@@ -112,7 +121,7 @@ pub struct TransactionSignaturePubKey {
     pub s_type: String,
     pub value: Value, // this can either be a string, or a array if type == tendermint/PubKeyMultisigThreshold
 }
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct NewBlockValidatorUpdate {
     pub pub_key: PubKey,
     #[serde(with = "terra_u64_format")]

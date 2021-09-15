@@ -1,9 +1,11 @@
 use futures::{SinkExt, StreamExt};
 
-use crate::messages::MessageTX;
-use crate::types::NewBlock;
+use crate::messages::{MessageBlockEventCommission, MessageBlockEventReward, MessageTX};
+use crate::types::{NewBlock, NewBlockEvent};
 use actix_broker::{Broker, SystemBroker};
 use constellation_shared::AppState;
+use std::collections::HashMap;
+use terra_rust_api::core_types::Coin;
 use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::http::Request;
 use tokio_tungstenite::tungstenite::Message;
@@ -14,10 +16,11 @@ pub const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 pub const NAME: Option<&'static str> = option_env!("CARGO_PKG_NAME");
 
 pub async fn run(
-    state: AppState,
+    _state: AppState,
     //  tx: mpsc::Sender<()>,
     connect_addr: String,
 ) {
+    // TODO: put this in a loop with exponential backoff?
     match Request::builder()
         .header(
             "User-Agent",
@@ -63,9 +66,7 @@ pub async fn run(
                                                     new_block.chain_id,
                                                     new_block.data.block.header.height
                                                 );
-                                                if let Err(e) =
-                                                    process_block_emit(&state, &new_block)
-                                                {
+                                                if let Err(e) = process_block_emit(&new_block) {
                                                     log::error!(
                                                         "Error pushing block to actors: {}",
                                                         e
@@ -102,140 +103,251 @@ pub async fn run(
         Err(e) => log::error!("Unable to initiate observer:{}", e),
     }
 }
-fn process_block_emit(_state: &AppState, block: &NewBlock) -> anyhow::Result<()> {
+fn process_block_emit(block: &NewBlock) -> anyhow::Result<()> {
+    let height = block.data.block.header.height;
     if let Some(txs) = &block.data.txs {
         txs.iter().for_each(|tx| {
             Broker::<SystemBroker>::issue_async(MessageTX { tx: tx.clone() });
         })
     }
-    Ok(())
-}
-/*
-fn _process_block(_state: &AppState, block: &NewBlock) -> anyhow::Result<()> {
-    &block
+    block
         .data
         .result_begin_block
         .events
         .iter()
-        .for_each(|event| {
-            let mut validator = None;
-            let mut amount: Vec<Coin> = vec![];
-
-            event.attributes.iter().for_each(|attribute| {
-                if attribute.key == "validator" {
-                    if let Some(v) = &attribute.value {
-                        validator = Some(v)
-                    } else {
-                        validator = None;
-                    }
-                } else if attribute.key == "amount" {
-                    if let Some(v) = &attribute.value {
-                        amount = Coin::parse_coins(v).unwrap_or_default()
-                    } else if event.s_type != "commission" {
-                        log::info!("unable to find coins? {}", event.s_type)
-                    }
-                } else {
-                    // log::info!("{} {}", attribute.key, attribute.value)
-                }
-            });
-            if let Some(v) = validator {
-                if v.eq_ignore_ascii_case("terravaloper12g4nkvsjjnl0t7fvq3hdcw7y8dc9fq69nyeu9q") {
-                    log::info!("{} {} {:?}", event.s_type, v, amount);
-                }
-            }
-        });
-    // let end_block_events = block.data.result_end_block.events;
-    if let Some(ebe) = &block.data.result_end_block.events {
-        ebe.iter().for_each(|event| {
-            let mut validator = None;
-            let mut amount: Vec<Coin> = vec![];
-
-            event.attributes.iter().for_each(|attribute| {
-                if attribute.key == "validator" {
-                    if let Some(v) = &attribute.value {
-                        validator = Some(v)
-                    } else {
-                        validator = None;
-                    }
-                } else if attribute.key == "amount" {
-                    if let Some(v) = &attribute.value {
-                        amount = Coin::parse_coins(v).unwrap_or_default()
-                    } else if event.s_type != "commission" {
-                        log::info!("unable to find coins? {}", event.s_type)
-                    }
-                } else {
-                    // log::info!("{} {}", attribute.key, attribute.value)
-                }
-            });
-            if let Some(v) = validator {
-                if v.eq_ignore_ascii_case("terravaloper12g4nkvsjjnl0t7fvq3hdcw7y8dc9fq69nyeu9q") {
-                    log::info!("{} {} {:?}", event.s_type, v, amount);
-                }
-            }
-        });
-    }
-    if let Some(txs) = &block.data.txs {
-        let votes = txs
-            .iter()
-            .flat_map(|tx| {
-                tx.tx
-                    .value
-                    .msg
-                    .iter()
-                    .filter(|f| f.s_type == "oracle/MsgAggregateExchangeRateVote")
-            })
-            .collect::<Vec<_>>();
-        let x = votes
-            .iter()
-            .flat_map(|f| {
-                if let Some(vv) = f.value.get("validator") {
-                    if let Some(validator) = vv.as_str() {
-                        if let Some(ee) = f.value.get("exchange_rates") {
-                            if let Some(exchange_rates) = ee.as_str() {
-                                Some((validator, exchange_rates))
-                            } else {
-                                log::info!("{} Exchange rates missing?", validator);
-                                None
-                            }
-                        } else {
-                            log::info!("{} Exchange rates missing?", validator);
-                            None
-                        }
-                    } else {
-                        log::info!("Validator missing?");
-                        None
-                    }
-                } else {
-                    log::info!("Validator missing?");
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
-        if votes.len() != x.len() {
-            log::error!("{} {} should be the same?", votes.len(), x.len())
+        .for_each(|event| process_event(height, true, event));
+    match &block.data.result_end_block.events {
+        None => {}
+        Some(end_block_events) => {
+            end_block_events
+                .iter()
+                .for_each(|event| process_event(height, false, event));
         }
-        x.iter().for_each(|x| println!("{} {}", x.0, x.1));
-        // log::info!("{:?}", x);
-        txs.iter().for_each(|tx| {
-            tx.tx.value.msg.iter().for_each(|f| {
-                match f.s_type.as_str() {
-                    "oracle/MsgAggregateExchangeRateVote" => {
-                        // log::info!("{} {}", f.s_type, f.value.to_string())
-                    }
-                    "oracle/MsgAggregateExchangeRatePrevote" => {
-                        //         log::info!("{}", f.s_type)
-                        // log::info!("{} {}", f.s_type, f.value.to_string())
-                    }
-                    _ => {
-                        log::info!("{}", f.s_type)
-                    }
-                };
-            })
-        })
-
-        /*  */
     }
 
     Ok(())
 }
-*/
+fn get_required_kv(hash_map: &HashMap<String, Option<String>>, key: &str) -> Option<String> {
+    if let Some(val) = hash_map.get(key) {
+        val.as_ref().map(|value| value.into())
+    } else {
+        None
+    }
+}
+fn process_event(height: u64, is_begin: bool, event: &NewBlockEvent) {
+    let attributes = event.attribute_map();
+
+    match event.s_type.as_str() {
+        "rewards" => match get_required_kv(&attributes, "validator") {
+            Some(validator_value) => match get_required_kv(&attributes, "amount") {
+                Some(amount_str) => match Coin::parse_coins(&amount_str) {
+                    Ok(coins) => {
+                        Broker::<SystemBroker>::issue_async(MessageBlockEventReward {
+                            height,
+                            is_begin,
+                            is_proposer: false,
+                            validator: validator_value,
+                            amount: coins,
+                        });
+                    }
+                    Err(e) => {
+                        log::error!(
+                            "Bad Coin String: {} {} {} {}",
+                            height,
+                            validator_value,
+                            amount_str,
+                            e
+                        )
+                    }
+                },
+                None => {
+                    log::info!("Rewards Zero? {} {}", height, validator_value);
+                    Broker::<SystemBroker>::issue_async(MessageBlockEventReward {
+                        height,
+                        is_begin,
+                        is_proposer: false,
+                        validator: validator_value,
+                        amount: vec![],
+                    });
+                }
+            },
+            None => log::warn!(
+                "Expecting validator key for rewards event {} {:#?}",
+                height,
+                attributes
+            ),
+        },
+        "proposer_reward" => match get_required_kv(&attributes, "validator") {
+            Some(validator_value) => match get_required_kv(&attributes, "amount") {
+                Some(amount_str) => match Coin::parse_coins(&amount_str) {
+                    Ok(coins) => {
+                        Broker::<SystemBroker>::issue_async(MessageBlockEventReward {
+                            height,
+                            is_begin,
+                            is_proposer: true,
+                            validator: validator_value,
+                            amount: coins,
+                        });
+                    }
+                    Err(e) => {
+                        log::error!(
+                            "Bad Coin String: {} {} {} {}",
+                            height,
+                            validator_value,
+                            amount_str,
+                            e
+                        )
+                    }
+                },
+                None => {
+                    log::info!("Rewards Zero? {} {}", height, validator_value);
+                    Broker::<SystemBroker>::issue_async(MessageBlockEventReward {
+                        height,
+                        is_begin,
+                        is_proposer: true,
+                        validator: validator_value,
+                        amount: vec![],
+                    });
+                }
+            },
+            None => log::warn!(
+                "Expecting validator key for rewards event {} {:#?}",
+                height,
+                attributes
+            ),
+        },
+        "commission" => match get_required_kv(&attributes, "validator") {
+            Some(validator_value) => match get_required_kv(&attributes, "amount") {
+                Some(amount_str) => match Coin::parse_coins(&amount_str) {
+                    Ok(coins) => {
+                        Broker::<SystemBroker>::issue_async(MessageBlockEventCommission {
+                            height,
+                            is_begin,
+                            validator: validator_value,
+                            amount: coins,
+                        });
+                    }
+                    Err(e) => {
+                        log::error!("Bad Coin String: {} {} {}", height, amount_str, e)
+                    }
+                },
+                None => {
+                    Broker::<SystemBroker>::issue_async(MessageBlockEventCommission {
+                        height,
+                        is_begin,
+                        validator: validator_value,
+                        amount: vec![],
+                    });
+                }
+            },
+            None => log::warn!(
+                "Expecting validator key for commission event {} {:#?}",
+                height,
+                attributes
+            ),
+        },
+        "liveness" => {
+            let missed_blocks_o = get_required_kv(&attributes, "missed_blocks");
+            let address_o = get_required_kv(&attributes, "address");
+            let height_o = get_required_kv(&attributes, "height");
+            log::info!(
+                "Liveness:{}/{} Addr:{} Missed:{}",
+                height,
+                height_o.unwrap_or_default(),
+                address_o.unwrap_or_default(),
+                missed_blocks_o.unwrap_or_default()
+            )
+        }
+        "transfer" => {
+            let sender_o = get_required_kv(&attributes, "sender");
+            let recipient_o = get_required_kv(&attributes, "recipient");
+            let amount_o = get_required_kv(&attributes, "amount");
+            log::debug!(
+                "Transfer:{} {} {} {}",
+                height,
+                sender_o.unwrap_or_default(),
+                recipient_o.unwrap_or_default(),
+                amount_o.unwrap_or_default()
+            )
+        }
+        "message" => {
+            let sender_o = get_required_kv(&attributes, "sender");
+
+            log::debug!("Message: {} {}", height, sender_o.unwrap_or_default(),)
+        }
+        "exchange_rate_update" => {
+            let exchange_rate_o = get_required_kv(&attributes, "exchange_rate");
+            let denom_o = get_required_kv(&attributes, "denom");
+
+            if let Some(denom) = denom_o {
+                if denom == "uusd" {
+                    log::info!(
+                        "exchange_rate_update: {} {} {}",
+                        height,
+                        denom,
+                        exchange_rate_o.unwrap_or_default()
+                    )
+                } else {
+                    log::debug!(
+                        "exchange_rate_update: {} {} {}",
+                        height,
+                        denom,
+                        exchange_rate_o.unwrap_or_default()
+                    )
+                }
+            } else {
+                log::error!(
+                    "exchange_rate_update: {} -missing- {}",
+                    height,
+                    exchange_rate_o.unwrap_or_default()
+                )
+            }
+        }
+        "complete_unbonding" => {
+            let validator_o = get_required_kv(&attributes, "validator");
+            let delegator_o = get_required_kv(&attributes, "delegator");
+
+            log::info!(
+                "complete_unbonding: {} {} {}",
+                height,
+                validator_o.unwrap_or_default(),
+                delegator_o.unwrap_or_default()
+            )
+        }
+        "complete_redelegation" => {
+            let validator_o = get_required_kv(&attributes, "validator");
+            let delegator_o = get_required_kv(&attributes, "delegator");
+
+            log::info!(
+                "complete_redelegation: {} {} {}",
+                height,
+                validator_o.unwrap_or_default(),
+                delegator_o.unwrap_or_default()
+            )
+        }
+        "mint" => {
+            let bonded_ratio_o = get_required_kv(&attributes, "bonded_ratio");
+            let amount_o = get_required_kv(&attributes, "amount");
+            let inflation_o = get_required_kv(&attributes, "inflation");
+            let annual_provisions_o = get_required_kv(&attributes, "annual_provisions");
+
+            log::debug!(
+                "mint:{} Bonded:{} amount:{} inflation:{} annual provisions:{}",
+                height,
+                bonded_ratio_o.unwrap_or_default(),
+                amount_o.unwrap_or_default(),
+                inflation_o.unwrap_or_default(),
+                annual_provisions_o.unwrap_or_default()
+            )
+        }
+        //   "transfer" => {}
+        unknown => {
+            log::info!(
+                "Unrecognized Event: {} {} {:#?}",
+                height,
+                unknown,
+                attributes
+            )
+        }
+    }
+}

@@ -2,6 +2,7 @@ use actix::prelude::*;
 
 use crate::types::TXandResult;
 use rust_decimal::Decimal;
+use terra_rust_api::core_types::Coin;
 use terra_rust_api::staking_types::Validator;
 
 #[derive(Clone, Debug, Message)]
@@ -9,6 +10,24 @@ use terra_rust_api::staking_types::Validator;
 pub struct MessageTX {
     pub tx: TXandResult,
 }
+#[derive(Clone, Debug, Message)]
+#[rtype(result = "()")]
+pub struct MessageBlockEventReward {
+    pub height: u64,
+    pub is_begin: bool,
+    pub is_proposer: bool,
+    pub validator: String,
+    pub amount: Vec<Coin>,
+}
+#[derive(Clone, Debug, Message)]
+#[rtype(result = "()")]
+pub struct MessageBlockEventCommission {
+    pub height: u64,
+    pub is_begin: bool,
+    pub validator: String,
+    pub amount: Vec<Coin>,
+}
+
 #[derive(Clone, Debug, Message)]
 #[rtype(result = "()")]
 pub struct MessagePriceDrift {

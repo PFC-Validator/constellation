@@ -683,7 +683,7 @@ dependencies = [
 
 [[package]]
 name = "constellation-observer"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "actix",
  "actix-broker",
@@ -727,6 +727,8 @@ dependencies = [
 name = "constellation-shared"
 version = "0.1.0"
 dependencies = [
+ "actix",
+ "actix-broker",
  "anyhow",
  "chrono",
  "log",

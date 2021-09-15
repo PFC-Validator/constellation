@@ -14,6 +14,7 @@ use crate::messages::{
     MessageValidatorStakedTotal, ValidatorEventType,
 };
 use crate::BrokerType;
+use constellation_shared::MessageStop;
 use std::collections::hash_map::Entry;
 
 pub struct OracleActor {
@@ -182,8 +183,19 @@ impl Actor for OracleActor {
     fn started(&mut self, ctx: &mut Self::Context) {
         self.subscribe_sync::<BrokerType, MessageTX>(ctx);
         self.subscribe_sync::<BrokerType, MessageValidatorStakedTotal>(ctx);
+        self.subscribe_sync::<BrokerType, MessageStop>(ctx);
     }
 }
+
+impl Handler<MessageStop> for OracleActor {
+    type Result = ();
+
+    fn handle(&mut self, _msg: MessageStop, ctx: &mut Self::Context) {
+        log::info!("Oracle Actor Stopping");
+        ctx.stop()
+    }
+}
+
 impl Handler<MessageValidatorStakedTotal> for OracleActor {
     type Result = ();
 

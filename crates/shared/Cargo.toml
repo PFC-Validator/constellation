@@ -13,3 +13,5 @@ terra-rust-api = { version = "0.3.4"}#, path= "../../../terra-rust/terra-rust-ap
 log = "0.4.14"
 chrono = "0.4.19"
 anyhow = "1.0"
+actix="0.12.0"
+actix-broker = "0.4.1"

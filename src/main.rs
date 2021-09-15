@@ -1,15 +1,17 @@
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use actix::prelude::*;
 
-use actix_web::dev::Server;
+//use actix_web::dev::Server;
 use dotenv::dotenv;
 use structopt::StructOpt;
 use tokio::task::JoinHandle;
 
 use constellation_shared::state::{AppState, State, StateVersion};
 //use futures::FutureExt;
+use actix_broker::{Broker, SystemBroker};
+use constellation_shared::MessageStop;
 use std::collections::HashSet;
 
 mod errors;
@@ -35,6 +37,7 @@ struct Cli {
         name = "rpc",
         about = "RPC endpoint",
         env = "TERRARUST_RPC_ENDPOINT",
+        long,
         default_value = "http://public-node.terra.dev:26657"
     )]
     rpc_endpoint: String,
@@ -42,6 +45,7 @@ struct Cli {
         name = "fcd",
         about = "fcd endpoint",
         env = "TERRARUST_FCD_ENDPOINT",
+        long,
         default_value = "https://fcd.terra.dev"
     )]
     _fcd_endpoint: String,
@@ -56,6 +60,7 @@ struct Cli {
     #[structopt(
         name = "address-book",
         env = "ADDRESS_BOOK_MAIN",
+        long,
         default_value = "https://network.terra.dev/addrbook.json",
         help = "default address book for columbus"
     )]
@@ -65,6 +70,7 @@ struct Cli {
     #[structopt(
         name = "state-file",
         default_value = "state.json",
+        long,
         help = "where to store state to survive restarts"
     )]
     // state file for checkpoints/backups
@@ -72,6 +78,7 @@ struct Cli {
     #[structopt(
         name = "geodb-file",
         default_value = "db/GeoLite2-City.mmdb",
+        long,
         help = "maxmind city db file"
     )]
     // state file for checkpoints/backups
@@ -79,6 +86,7 @@ struct Cli {
     #[structopt(
         name = "run-modules",
         env = "CONSTELLATION_RUN",
+        long,
         default_value = "all",
         help = "what modules to run"
     )]
@@ -138,9 +146,9 @@ async fn run() -> anyhow::Result<()> {
         }
     };
     let state: AppState = Arc::new(Mutex::new(state_data));
-    let mut tasks: Vec<JoinHandle<_>> = vec![];
-    // let mut tasks: Vec<JoinHandle<anyhow::Result<()>>> = vec![];
-    let (tx_web, _rx_web) = mpsc::channel::<Server>();
+    let mut tasks: Vec<JoinHandle<_>> = Default::default();
+
+    //let (tx_web, _rx_web) = mpsc::channel::<Server>();
     //    let (tx_observer, rx_observer) = mpsc::channel::<()>();
 
     if modules.contains("all") || modules.contains("address-book") {
@@ -232,7 +240,7 @@ async fn run() -> anyhow::Result<()> {
     if modules.contains("all") || modules.contains("web") {
         let web_join = actix_rt::spawn(constellation_web::run(
             state.clone(),
-            tx_web,
+            //  tx_web,
             NAME.unwrap_or("constellation"),
             VERSION.unwrap_or("dev"),
         ));
@@ -240,8 +248,17 @@ async fn run() -> anyhow::Result<()> {
     }
     // TODO - respawn failed tasks
 
-    let returns = futures::future::join_all(tasks).await;
+    tokio::spawn(async move {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("Could not register ctrl+c handler");
+        log::error!("^c ..terminating");
+        Broker::<SystemBroker>::issue_async(MessageStop {});
+        std::process::exit(-1);
+    });
 
+    let returns = futures::future::join_all(tasks).await;
+    Broker::<SystemBroker>::issue_async(MessageStop {});
     for result in returns {
         if let Err(e) = result {
             log::error!("task failed? {}", e)
@@ -267,7 +284,7 @@ async fn run() -> anyhow::Result<()> {
 
     Ok(())
 }
-//#[tokio::main]
+
 #[actix_web::main]
 async fn main() {
     dotenv().ok(); // this fails if .env isn't present. It is safe to be ignored

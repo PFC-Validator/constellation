@@ -1,4 +1,4 @@
-use actix_web::dev::Server;
+//use actix_web::dev::Server;
 use actix_web::{middleware, web, App, Error as AWError, HttpRequest, HttpResponse, HttpServer};
 use constellation_shared::state::{
     AppState, GeoCity, GeoContinent, GeoCountry, GeoID, IpAsnMapping, ASN,
@@ -8,14 +8,15 @@ use constellation_shared::state::{
 pub const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 /// NAME of package
 pub const NAME: Option<&'static str> = option_env!("CARGO_PKG_NAME");
+use actix_web::dev::Server;
 use serde::Serialize;
 use std::collections::HashSet;
-use std::sync::mpsc;
+//use std::sync::mpsc;
 use terra_rust_api::addressbook::{NodeAddr, NodeIDIPPort};
 
 pub async fn run(
     state: AppState,
-    _tx: mpsc::Sender<Server>,
+    // _tx: mpsc::Sender<Server>,
     name: &'static str,
     version: &'static str,
 ) {
@@ -53,7 +54,7 @@ pub async fn run(
     .bind("0.0.0.0:8080");
     match srv {
         Ok(server) => {
-            let s = server.run();
+            let s: Server = server.run();
             //   let _ = tx.send(s);
             local.spawn_local(s);
             // s.await?;

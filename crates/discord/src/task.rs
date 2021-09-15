@@ -6,13 +6,7 @@ use actor_discord::DiscordBot;
 use actor_discord::GatewayIntents;
 use constellation_shared::state::AppState;
 
-pub async fn run(
-    _state: AppState,
-    discord_token: String,
-    //  _discord_category_name: String,
-    discord_url: String, // _period: Duration,
-    max_retries: usize,
-) {
+pub async fn run(_state: AppState, discord_token: String, discord_url: String, max_retries: usize) {
     let intents: GatewayIntents = GatewayIntents::GUILDS
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::GUILD_MESSAGES
@@ -28,13 +22,4 @@ pub async fn run(
         },
         Err(e) => log::error!("Error:{}", e),
     };
-
-    /*
-        tokio::spawn(async move {
-            tokio::signal::ctrl_c()
-                .await
-                .expect("Could not register ctrl+c handler");
-            shard_manager.lock().await.shutdown_all().await;
-        });
-    */
 }
