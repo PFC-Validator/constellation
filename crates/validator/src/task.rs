@@ -9,6 +9,7 @@ pub async fn run(_state: AppState, period: Duration, chain_id: String, lcd_endpo
     log::info!("Validator task starting");
     let mut interval = time::interval(period);
     loop {
+        log::info!("Attempting validator refresh");
         match Terra::lcd_client_no_tx(&lcd_endpoint, &chain_id).await {
             Ok(terra) => match terra.staking().validators().await {
                 Ok(validator_result) => validator_result.result.iter().for_each(|v| {
