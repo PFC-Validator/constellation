@@ -256,7 +256,7 @@ dependencies = [
 
 [[package]]
 name = "actor-discord"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "actix",
  "actix-broker",
