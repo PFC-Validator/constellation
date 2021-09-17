@@ -117,6 +117,7 @@ struct Cli {
 }
 
 async fn run() -> anyhow::Result<()> {
+    println!("Starting ...");
     let cli: Cli = Cli::from_args();
     let discord_token = cli.discord_token;
     //env::var("DISCORD_TOKEN").expect("Expected a discord token in the environment");

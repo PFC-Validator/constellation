@@ -49,6 +49,11 @@ impl ValidatorActor {
             Ok(terra) => match terra.staking().validators().await {
                 Ok(validator_result) => match terra.tendermint().validatorsets(0, 999).await {
                     Ok(tendermint_result) => {
+                        log::info!(
+                            "Have validator/tendermint list kickstart v:{} t:{}",
+                            validator_result.result.len(),
+                            tendermint_result.result.validators.len()
+                        );
                         let merged_validator_lists = ValidatorActor::from_validator_list(
                             validator_result.height,
                             validator_result.result,
@@ -152,6 +157,11 @@ impl Handler<MessageValidator> for ValidatorActor {
     type Result = ();
 
     fn handle(&mut self, msg: MessageValidator, _ctx: &mut Self::Context) {
+        log::debug!(
+            "Validator Updated MSG {}/{}",
+            msg.validator.description.moniker,
+            msg.tendermint.is_some()
+        );
         let height = msg.height;
         let now = Utc::now();
         match self.validators.entry(msg.operator_address.clone()) {
@@ -266,6 +276,7 @@ impl Handler<MessageBlockEventLiveness> for ValidatorActor {
     type Result = ();
 
     fn handle(&mut self, msg: MessageBlockEventLiveness, _ctx: &mut Self::Context) {
+        log::info!("Liveness {}", msg.tendermint_address);
         let height = msg.height;
         if let Some(validator_address) = self.cons.get(&msg.tendermint_address) {
             match self.validators.get(validator_address) {
