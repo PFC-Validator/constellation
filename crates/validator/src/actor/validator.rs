@@ -47,7 +47,7 @@ impl ValidatorActor {
         log::info!("Validator Actor starting up");
         match Terra::lcd_client_no_tx(lcd, chain).await {
             Ok(terra) => match terra.staking().validators().await {
-                Ok(validator_result) => match terra.tendermint().validatorsets(0, 999).await {
+                Ok(validator_result) => match terra.tendermint().validatorsets_full().await {
                     Ok(tendermint_result) => {
                         log::info!(
                             "Have validator/tendermint list kickstart v:{} t:{}",

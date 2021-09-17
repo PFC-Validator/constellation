@@ -15,7 +15,7 @@ pub async fn run(_state: AppState, period: Duration, chain_id: String, lcd_endpo
         log::info!("Attempting validator refresh");
         match Terra::lcd_client_no_tx(&lcd_endpoint, &chain_id).await {
             Ok(terra) => {
-                let tendermint_validator_set = terra.tendermint().validatorsets(0, 999).await;
+                let tendermint_validator_set = terra.tendermint().validatorsets_full().await;
                 match tendermint_validator_set {
                     Ok(tendermint_list) => {
                         tendermint_list.result.validators.iter().for_each(|v| {
