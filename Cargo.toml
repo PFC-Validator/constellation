@@ -1,6 +1,6 @@
 [package]
 name = "constellation"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2018"
 license = "Apache-2.0"
 description = "Constellation oversees all the plants and things in the cosmos to ensure we can moon"
@@ -22,7 +22,6 @@ reqwest = { version = "0.11", features = ["json"], default-features = false }
 anyhow = "1.0"
 thiserror = "1.0"
 url = "2.2.2"
-#terra-rust-api = { version = "0.3.4"} #, path= "../terra-rust/terra-rust-api" }
 structopt = "0.3"
 chrono = "0.4.19"
 futures = "0.3.16"

@@ -1,11 +1,14 @@
 use futures::{SinkExt, StreamExt};
 
-use crate::messages::{MessageBlockEventCommission, MessageBlockEventReward, MessageTX};
+use crate::messages::{
+    MessageBlockEventCommission, MessageBlockEventLiveness, MessageBlockEventReward, MessageTX,
+};
 use crate::types::{NewBlock, NewBlockEvent};
 use actix_broker::{Broker, SystemBroker};
 use constellation_shared::AppState;
 use std::collections::HashMap;
 use terra_rust_api::core_types::Coin;
+use tokio::time::Duration;
 use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::http::Request;
 use tokio_tungstenite::tungstenite::Message;
@@ -14,92 +17,93 @@ use tokio_tungstenite::tungstenite::Message;
 pub const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 /// NAME of package
 pub const NAME: Option<&'static str> = option_env!("CARGO_PKG_NAME");
+// TODO add proposing validator to messages.
+pub async fn run(_state: AppState, connect_addr: String) {
+    loop {
+        match Request::builder()
+            .header(
+                "User-Agent",
+                format!(
+                    "{}/{}",
+                    NAME.unwrap_or("Constellation"),
+                    VERSION.unwrap_or("dev")
+                ),
+            )
+            .uri(&connect_addr)
+            .body(())
+        {
+            Ok(ws_request) => {
+                let (mut ws_stream, _) =
+                    connect_async(ws_request).await.expect("Failed to connect");
+                log::info!("Connected");
+                //  let (mut write, read) = ws_stream.split();
+                let msg =
+                    Message::text("{\"subscribe\":\"new_block\",\"chain_id\":\"columbus-4\"}");
+                match ws_stream.send(msg).await {
+                    Ok(_) => {
+                        while let Some(message) = ws_stream.next().await {
+                            // read.for_each(|message| async {
+                            match message {
+                                Ok(msg) => {
+                                    /*
+                                    log::info!(
+                                        "empty {} ping {} pong {} bin {} text {} close {} len {}",
+                                        msg.is_empty(),
+                                        msg.is_ping(),
+                                        msg.is_pong(),
+                                        msg.is_binary(),
+                                        msg.is_text(),
+                                        msg.is_close(),
+                                        msg.len()
+                                    );
 
-pub async fn run(
-    _state: AppState,
-    //  tx: mpsc::Sender<()>,
-    connect_addr: String,
-) {
-    // TODO: put this in a loop with exponential backoff?
-    match Request::builder()
-        .header(
-            "User-Agent",
-            format!(
-                "{}/{}",
-                NAME.unwrap_or("Constellation"),
-                VERSION.unwrap_or("dev")
-            ),
-        )
-        .uri(&connect_addr)
-        .body(())
-    {
-        Ok(ws_request) => {
-            let (mut ws_stream, _) = connect_async(ws_request).await.expect("Failed to connect");
-            log::info!("Connected");
-            //  let (mut write, read) = ws_stream.split();
-            let msg = Message::text("{\"subscribe\":\"new_block\",\"chain_id\":\"columbus-4\"}");
-            match ws_stream.send(msg).await {
-                Ok(_) => {
-                    while let Some(message) = ws_stream.next().await {
-                        // read.for_each(|message| async {
-                        match message {
-                            Ok(msg) => {
-                                /*
-                                log::info!(
-                                    "empty {} ping {} pong {} bin {} text {} close {} len {}",
-                                    msg.is_empty(),
-                                    msg.is_ping(),
-                                    msg.is_pong(),
-                                    msg.is_binary(),
-                                    msg.is_text(),
-                                    msg.is_close(),
-                                    msg.len()
-                                );
-
-                                 */
-                                match msg {
-                                    Message::Text(text) => {
-                                        match serde_json::from_str::<NewBlock>(&text) {
-                                            Ok(new_block) => {
-                                                log::info!(
-                                                    "Block:{} {}",
-                                                    new_block.chain_id,
-                                                    new_block.data.block.header.height
-                                                );
-                                                if let Err(e) = process_block_emit(&new_block) {
-                                                    log::error!(
-                                                        "Error pushing block to actors: {}",
-                                                        e
+                                     */
+                                    match msg {
+                                        Message::Text(text) => {
+                                            match serde_json::from_str::<NewBlock>(&text) {
+                                                Ok(new_block) => {
+                                                    log::info!(
+                                                        "Block:{} {}",
+                                                        new_block.chain_id,
+                                                        new_block.data.block.header.height
                                                     );
+                                                    if let Err(e) = process_block_emit(&new_block) {
+                                                        log::error!(
+                                                            "Error pushing block to actors: {}",
+                                                            e
+                                                        );
+                                                    }
+                                                }
+                                                Err(e) => {
+                                                    log::error!("Error parsing block: {}", e);
+                                                    log::error!("{}", text);
                                                 }
                                             }
-                                            Err(e) => {
-                                                log::error!("Error parsing block: {}", e);
-                                                log::error!("{}", text);
+                                        }
+                                        Message::Binary(_) => {}
+                                        Message::Ping(p) => {
+                                            let pong = Message::Pong(p);
+                                            if let Err(e) = ws_stream.send(pong).await {
+                                                log::error!("Unable to respond pong {:#?}", e)
                                             }
                                         }
+                                        Message::Pong(_) => {}
+                                        Message::Close(_) => {}
                                     }
-                                    Message::Binary(_) => {}
-                                    Message::Ping(p) => {
-                                        let pong = Message::Pong(p);
-                                        if let Err(e) = ws_stream.send(pong).await {
-                                            log::error!("Unable to respond pong {:#?}", e)
-                                        }
-                                    }
-                                    Message::Pong(_) => {}
-                                    Message::Close(_) => {}
                                 }
-                            }
-                            Err(e) => {
-                                log::error!("{:#?}", e)
+                                Err(e) => {
+                                    log::error!("{:#?}", e)
+                                }
                             }
                         }
                     }
+                    Err(e) => log::error!("Unable to send message {:#?}", e),
                 }
-                Err(e) => log::error!("Unable to send message {:#?}", e),
             }
+            Err(e) => log::error!("Unable to initiate observer:{}", e),
         }
-        Err(e) => log::error!("Unable to initiate observer:{}", e),
+        log::warn!("Observer exited..retrying in 2s");
+        tokio::time::sleep(Duration::from_secs(2)).await;
     }
 }
 fn process_block_emit(block: &NewBlock) -> anyhow::Result<()> {
@@ -259,13 +263,24 @@ fn process_event(height: u64, is_begin: bool, event: &NewBlockEvent) {
             let missed_blocks_o = get_required_kv(&attributes, "missed_blocks");
             let address_o = get_required_kv(&attributes, "address");
             let height_o = get_required_kv(&attributes, "height");
-            log::info!(
-                "Liveness:{}/{} Addr:{} Missed:{}",
-                height,
-                height_o.unwrap_or_default(),
-                address_o.unwrap_or_default(),
-                missed_blocks_o.unwrap_or_default()
-            )
+            if let Some(tm_address) = address_o {
+                let mb_str = missed_blocks_o.unwrap_or_else(|| "0".into());
+                let mb: usize = mb_str.parse().unwrap_or(0);
+                Broker::<SystemBroker>::issue_async(MessageBlockEventLiveness {
+                    height,
+                    is_begin,
+                    tendermint_address: tm_address,
+                    missed: mb,
+                });
+            } else {
+                log::warn!(
+                    "bad message ? Liveness:{}/{} Addr:{} Missed:{}",
+                    height,
+                    height_o.unwrap_or_default(),
+                    address_o.unwrap_or_default(),
+                    missed_blocks_o.unwrap_or_default()
+                )
+            }
         }
         "transfer" => {
             let sender_o = get_required_kv(&attributes, "sender");

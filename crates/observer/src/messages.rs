@@ -3,8 +3,8 @@ use actix::prelude::*;
 use crate::types::TXandResult;
 use rust_decimal::Decimal;
 use terra_rust_api::core_types::Coin;
-use terra_rust_api::staking_types::Validator;
-
+use terra_rust_api::staking_types;
+use terra_rust_api::tendermint_types;
 #[derive(Clone, Debug, Message)]
 #[rtype(result = "()")]
 pub struct MessageTX {
@@ -18,6 +18,14 @@ pub struct MessageBlockEventReward {
     pub is_proposer: bool,
     pub validator: String,
     pub amount: Vec<Coin>,
+}
+#[derive(Clone, Debug, Message)]
+#[rtype(result = "()")]
+pub struct MessageBlockEventLiveness {
+    pub height: u64,
+    pub is_begin: bool,
+    pub tendermint_address: String,
+    pub missed: usize,
 }
 #[derive(Clone, Debug, Message)]
 #[rtype(result = "()")]
@@ -68,7 +76,8 @@ pub struct MessageValidatorStakedDelta {
 pub struct MessageValidator {
     pub height: u64,
     pub operator_address: String,
-    pub validator: Validator,
+    pub validator: staking_types::Validator,
+    pub tendermint: Option<tendermint_types::Validator>,
 }
 
 /// Sent when system wants to notify places that an event on a validator occurred

@@ -188,6 +188,18 @@ async fn run() -> anyhow::Result<()> {
             cli.rpc_endpoint.clone(),
         )));
     }
+    if modules.contains("all") || modules.contains("observer") {
+        tasks.push(actix_rt::spawn(constellation_observer::run(
+            state.clone(),
+            //tx_observer,
+            "wss://observer.terra.dev/".into(),
+        )));
+        let oracle_actor =
+            constellation_observer::actor::OracleActor::create(&cli.lcd_endpoint, &cli.chain_id)
+                .await?;
+
+        oracle_actor.start();
+    }
     if modules.contains("all") || modules.contains("validator") {
         log::info!("Validator turned on");
         tasks.push(actix_rt::spawn(constellation_validator::run(
@@ -202,19 +214,6 @@ async fn run() -> anyhow::Result<()> {
         )
         .await?;
         validator_actor.start();
-    }
-
-    if modules.contains("all") || modules.contains("observer") {
-        tasks.push(actix_rt::spawn(constellation_observer::run(
-            state.clone(),
-            //tx_observer,
-            "wss://observer.terra.dev/".into(),
-        )));
-        let oracle_actor =
-            constellation_observer::actor::OracleActor::create(&cli.lcd_endpoint, &cli.chain_id)
-                .await?;
-
-        oracle_actor.start();
     }
 
     if modules.contains("all") || modules.contains("discord") {
