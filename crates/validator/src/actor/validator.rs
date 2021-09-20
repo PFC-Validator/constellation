@@ -209,22 +209,23 @@ impl Handler<MessagePriceAbstain> for ValidatorActor {
                 v.last_updated_date = now;
                 //   e.into_mut();
                 let message = format!(
-                    "abstained from voting for denominations:{} Abstains:{} Drifts:{}",
+                    "abstained from voting for denominations:{} Abstains:{}",
                     //height,
                     //   v.validator.description.moniker,
                     msg.denoms.join(","),
                     v.abstains,
-                    v.drifts,
                     //  msg.txhash,
                 );
-                Broker::<SystemBroker>::issue_async(MessageValidatorEvent {
-                    height,
-                    operator_address: msg.operator_address.clone(),
-                    moniker: Some(v.validator.description.moniker.clone()),
-                    event_type: ValidatorEventType::INFO,
-                    message,
-                    hash: Some(msg.txhash),
-                });
+                if v.abstains / 10 == 0 {
+                    Broker::<SystemBroker>::issue_async(MessageValidatorEvent {
+                        height,
+                        operator_address: msg.operator_address.clone(),
+                        moniker: Some(v.validator.description.moniker.clone()),
+                        event_type: ValidatorEventType::INFO,
+                        message,
+                        hash: Some(msg.txhash),
+                    });
+                }
             }
             Entry::Vacant(_) => {
                 log::error!("Validator not found ? {}", msg.operator_address)
