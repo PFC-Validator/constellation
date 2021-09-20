@@ -15,7 +15,6 @@ use constellation_shared::MessageStop;
 use std::collections::HashSet;
 
 mod errors;
-mod tasks;
 
 /// VERSION number of package
 pub const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
