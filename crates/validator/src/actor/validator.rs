@@ -216,7 +216,7 @@ impl Handler<MessagePriceAbstain> for ValidatorActor {
                     v.abstains,
                     //  msg.txhash,
                 );
-                if v.abstains / 10 == 0 {
+                if v.abstains % 10 == 0 {
                     Broker::<SystemBroker>::issue_async(MessageValidatorEvent {
                         height,
                         operator_address: msg.operator_address.clone(),
