@@ -299,10 +299,13 @@ impl Handler<ChannelEvent> for DiscordValidatorActor {
         if let Some(guild_id) = self.guild_id {
             match msg {
                 ChannelEvent::ChannelCreate(gc) | ChannelEvent::ChannelUpdate(gc) => {
+                    log::info!("Channel Create/Update");
                     if let Some(topic) = gc.topic {
                         if topic.starts_with("terravaloper1") {
+                            let sanitized = DiscordAPI::sanitize(&gc.name);
+                            log::info!("Channel Map - gc.name:{} sanitized:{}", gc.name, sanitized);
                             self.channel_map.insert(
-                                gc.name.clone(),
+                                sanitized,
                                 GuildChannel {
                                     guild_id,
                                     channel_id: gc.id,
@@ -315,8 +318,10 @@ impl Handler<ChannelEvent> for DiscordValidatorActor {
                             match self.validator_discord_map.entry(topic.clone()) {
                                 Entry::Occupied(mut oc) => {
                                     if oc.get().id != channel_id.id {
-                                        log::warn!("Channel changed? {} {}", topic, name)
+                                        log::warn!("Channel changed? {} {}", topic, name);
+                                        oc.insert(channel_id);
                                     } else {
+                                        log::info!("Channel updated");
                                         oc.insert(channel_id);
                                     }
                                 }
@@ -327,7 +332,8 @@ impl Handler<ChannelEvent> for DiscordValidatorActor {
                             match self.discord_validator_map.entry(channel_id) {
                                 Entry::Occupied(mut oc) => {
                                     if oc.get() != &topic {
-                                        log::warn!("Channel changed? {} {}", topic, name)
+                                        log::warn!("Channel changed? {} {}", topic, name);
+                                        oc.insert(topic);
                                     } else {
                                         oc.insert(topic);
                                     }
@@ -341,6 +347,7 @@ impl Handler<ChannelEvent> for DiscordValidatorActor {
                 }
 
                 ChannelEvent::ChannelDelete(gc) => {
+                    log::info!("Channel Delete");
                     if let Some(topic) = gc.topic {
                         if topic.starts_with("terravaloper1") {
                             self.channel_map.remove(&gc.name);

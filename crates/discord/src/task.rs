@@ -22,7 +22,7 @@ pub async fn run(_state: AppState, discord_token: String, discord_url: String, m
                 },
                 Err(e) => log::error!("Error creating bot:{}", e),
             },
-            Err(e) => log::error!("Error creatung api:{}", e),
+            Err(e) => log::error!("Error creating api:{}", e),
         };
         log::warn!("Discord Disconnected..waiting 2 secs and trying again");
         tokio::time::sleep(Duration::from_secs(2)).await;

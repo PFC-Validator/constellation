@@ -23,4 +23,4 @@ actix-rt="2.2.0"
 actix-broker = "0.4.1"
 chrono = "0.4.19"
 rust_decimal="1.15.0"
-terra-rust-api = {version ="0.3.7", path="../../../terra-rust/terra-rust-api"}
+terra-rust-api = {version ="0.3.7"}
