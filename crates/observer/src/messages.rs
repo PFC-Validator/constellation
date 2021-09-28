@@ -35,6 +35,13 @@ pub struct MessageBlockEventCommission {
     pub validator: String,
     pub amount: Vec<Coin>,
 }
+#[derive(Clone, Debug, Message)]
+#[rtype(result = "()")]
+pub struct MessageBlockEventExchangeRate {
+    pub height: u64,
+    pub denom: String,
+    pub exchange_rate: Decimal,
+}
 
 #[derive(Clone, Debug, Message)]
 #[rtype(result = "()")]

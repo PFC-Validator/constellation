@@ -257,12 +257,18 @@ impl Handler<MessageTX> for OracleActor {
         } else {
             log::info!("Height: {} Type {}", msg.tx.height, msg.tx.tx.s_type);
         }
+        // make 'laggy' be 2 vote periods
         if height >= self.last_avg_at_height + self.vote_period {
             self.do_price_averages(height);
+            let laggy_height = if self.vote_period < self.last_avg_at_height {
+                self.last_avg_at_height - self.vote_period
+            } else {
+                0
+            };
             let laggy = self
                 .validator_vote_last_seen
                 .iter()
-                .filter(|f| f.1 < &self.last_avg_at_height)
+                .filter(|f| f.1 < &laggy_height)
                 .collect::<Vec<_>>();
             log::info!("Seen {} price votes", self.validator_vote_prices.len());
             if !laggy.is_empty() {

@@ -2,19 +2,22 @@ use std::collections::HashMap;
 
 use actix::prelude::*;
 use actix_broker::{Broker, BrokerSubscribe, SystemBroker};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Timelike, Utc};
 //use rust_decimal::Decimal;
 use terra_rust_api::staking_types;
 use terra_rust_api::tendermint_types;
 use terra_rust_api::Terra;
 
 use constellation_observer::messages::{
-    MessageBlockEventLiveness, MessagePriceAbstain, MessagePriceDrift, MessageValidator,
-    MessageValidatorEvent, MessageValidatorStakedTotal, ValidatorEventType,
+    MessageBlockEventExchangeRate, MessageBlockEventLiveness, MessageBlockEventReward,
+    MessagePriceAbstain, MessagePriceDrift, MessageValidator, MessageValidatorEvent,
+    MessageValidatorStakedTotal, ValidatorEventType,
 };
 use constellation_observer::BrokerType;
-use constellation_shared::MessageStop;
+use constellation_shared::{MessageStop, MessageTick};
+use rust_decimal::Decimal;
 use std::collections::hash_map::Entry;
+use std::ops::Div;
 
 #[derive(Clone, Debug)]
 pub struct ValidatorDetails {
@@ -35,10 +38,15 @@ struct MergedValidatorLists {
     pub cons: HashMap<String, String>,
 }
 pub struct ValidatorActor {
+    pub last_height: u64,
+    pub last_tick: Option<DateTime<Utc>>,
     pub validators: HashMap<String, ValidatorDetails>,
     pub moniker: HashMap<String, String>,
     pub cons_pub: HashMap<String, String>, // tendermint public key -> validator oper
     pub cons: HashMap<String, String>,     // tendermint account -> validator oper
+    pub rewards: HashMap<String, Decimal>,
+    pub rewards_cumulative: HashMap<String, Decimal>,
+    pub rates: HashMap<String, Decimal>,
     pub lcd: String,
     pub chain: String,
 }
@@ -60,10 +68,15 @@ impl ValidatorActor {
                             tendermint_result.result.validators,
                         );
                         Ok(ValidatorActor {
+                            last_height: 0,
+                            last_tick: None,
                             validators: merged_validator_lists.validator_details,
                             moniker: merged_validator_lists.monikers,
                             cons_pub: merged_validator_lists.cons_pub,
                             cons: merged_validator_lists.cons,
+                            rewards: Default::default(),
+                            rewards_cumulative: Default::default(),
+                            rates: Default::default(),
                             lcd: lcd.into(),
                             chain: chain.into(),
                         })
@@ -140,7 +153,10 @@ impl Actor for ValidatorActor {
         self.subscribe_sync::<BrokerType, MessagePriceAbstain>(ctx);
         self.subscribe_sync::<BrokerType, MessageValidator>(ctx);
         self.subscribe_sync::<BrokerType, MessageBlockEventLiveness>(ctx);
+        self.subscribe_sync::<BrokerType, MessageBlockEventReward>(ctx);
+        self.subscribe_sync::<BrokerType, MessageBlockEventExchangeRate>(ctx);
 
+        self.subscribe_sync::<BrokerType, MessageTick>(ctx);
         self.subscribe_sync::<BrokerType, MessageStop>(ctx);
     }
 }
@@ -163,6 +179,7 @@ impl Handler<MessageValidator> for ValidatorActor {
             msg.tendermint.is_some()
         );
         let height = msg.height;
+        self.last_height = height;
         let now = Utc::now();
         match self.validators.entry(msg.operator_address.clone()) {
             Entry::Occupied(mut e) => {
@@ -200,6 +217,7 @@ impl Handler<MessagePriceAbstain> for ValidatorActor {
 
     fn handle(&mut self, msg: MessagePriceAbstain, _ctx: &mut Self::Context) {
         let height = msg.height;
+        self.last_height = height;
         let now = Utc::now();
         match self.validators.entry(msg.operator_address.clone()) {
             Entry::Occupied(mut e) => {
@@ -240,6 +258,7 @@ impl Handler<MessagePriceDrift> for ValidatorActor {
     fn handle(&mut self, msg: MessagePriceDrift, _ctx: &mut Self::Context) {
         let now = Utc::now();
         let height = msg.height;
+        self.last_height = height;
         match self.validators.entry(msg.operator_address.clone()) {
             Entry::Occupied(mut e) => {
                 let mut v = e.get_mut();
@@ -277,8 +296,9 @@ impl Handler<MessageBlockEventLiveness> for ValidatorActor {
     type Result = ();
 
     fn handle(&mut self, msg: MessageBlockEventLiveness, _ctx: &mut Self::Context) {
-        log::info!("Liveness {}", msg.tendermint_address);
+        log::debug!("Liveness {}", msg.tendermint_address);
         let height = msg.height;
+        self.last_height = height;
         if let Some(validator_address) = self.cons.get(&msg.tendermint_address) {
             match self.validators.get(validator_address) {
                 Some(v) => {
@@ -298,5 +318,138 @@ impl Handler<MessageBlockEventLiveness> for ValidatorActor {
                 }
             }
         }
+    }
+}
+
+impl Handler<MessageBlockEventReward> for ValidatorActor {
+    type Result = ();
+
+    fn handle(&mut self, msg: MessageBlockEventReward, _ctx: &mut Self::Context) {
+        let height = msg.height;
+        self.last_height = height;
+        let mut block_reward: Decimal = Decimal::from(0);
+
+        for coin_amount in &msg.amount {
+            if coin_amount.denom == "uluna" {
+                block_reward += coin_amount.amount;
+            } else if let Some(rate) = self.rates.get(&coin_amount.denom) {
+                if rate > &Decimal::ZERO {
+                    block_reward += coin_amount.amount / rate;
+                } else {
+                    log::warn!(
+                        "Reward: {} Exchange rate Zero for {}",
+                        height,
+                        coin_amount.denom
+                    );
+                }
+            } else if !self.rates.is_empty() {
+                log::warn!(
+                    "Reward: {} Missing Exchange rate for {}.",
+                    height,
+                    coin_amount.denom
+                );
+            }
+        }
+        self.rewards
+            .entry(msg.validator)
+            .and_modify(|e| *e += block_reward)
+            .or_insert(block_reward);
+    }
+}
+impl Handler<MessageBlockEventExchangeRate> for ValidatorActor {
+    type Result = ();
+
+    fn handle(&mut self, msg: MessageBlockEventExchangeRate, _ctx: &mut Self::Context) {
+        self.last_height = msg.height;
+        self.rates.insert(msg.denom, msg.exchange_rate);
+    }
+}
+impl Handler<MessageTick> for ValidatorActor {
+    type Result = ();
+
+    fn handle(&mut self, msg: MessageTick, _ctx: &mut Self::Context) {
+        if let Some(validator) = self
+            .validators
+            .get("terravaloper12g4nkvsjjnl0t7fvq3hdcw7y8dc9fq69nyeu9q")
+        {
+            let tokens = validator.validator.tokens;
+            let rewards = self
+                .rewards
+                .get("terravaloper12g4nkvsjjnl0t7fvq3hdcw7y8dc9fq69nyeu9q")
+                .unwrap_or(&Decimal::ZERO);
+            let rate: Decimal = if tokens > 0 {
+                rewards / Decimal::from(tokens)
+            } else {
+                Decimal::ZERO
+            };
+
+            let message = format!(
+                "{} - Generated Rewards of {:0.0} uluna over {} tokens - 5m Rate {:0.8}",
+                validator.validator.description.moniker,
+                rewards,
+                tokens.div(1_000_000),
+                rate
+            );
+            log::info!("{}", message);
+
+            Broker::<SystemBroker>::issue_async(MessageValidatorEvent {
+                height: self.last_height,
+                operator_address: validator.validator.operator_address.clone(),
+                moniker: Some(validator.validator.description.moniker.clone()),
+                event_type: ValidatorEventType::DEBUG,
+                message,
+                hash: None,
+            });
+        } else {
+            log::warn!("Debug validator not found???");
+        }
+        if let Some(last_date) = self.last_tick {
+            if msg.now.hour() != last_date.hour() {
+                for validator in &self.rewards_cumulative {
+                    if let Some(validator_deets) = self.validators.get(validator.0) {
+                        let tokens = validator_deets.validator.tokens;
+                        let rewards = validator.1;
+                        let mut rate: Decimal = if tokens > 0 {
+                            rewards / Decimal::from(tokens)
+                        } else {
+                            Decimal::ZERO
+                        };
+                        rate *= Decimal::from(24); // daily
+                                                   // todo rate should be aggregated as tokens change
+                        let message = format!(
+                            "{} - Generated Rewards of {:0.2} luna over ~{:.2} tokens - Daily Rate {:0.8}",
+                            validator_deets.validator.description.moniker, rewards.div(Decimal::from(1_000_000)), tokens.div(1_000_000), rate
+                        );
+                        Broker::<SystemBroker>::issue_async(MessageValidatorEvent {
+                            height: self.last_height,
+                            operator_address: validator.0.clone(),
+                            moniker: Some(validator_deets.validator.description.moniker.clone()),
+                            event_type: ValidatorEventType::INFO,
+                            message,
+                            hash: None,
+                        });
+                    } else {
+                        log::warn!(
+                            "Missing details for validator {} - rewards {}",
+                            validator.0,
+                            validator.1
+                        )
+                    }
+                }
+                self.rewards_cumulative = self.rewards.clone();
+            } else {
+                for validator in &self.rewards {
+                    self.rewards_cumulative
+                        .entry(validator.0.clone())
+                        .and_modify(|e| *e += validator.1)
+                        .or_insert(*validator.1);
+                }
+            }
+        } else {
+            self.rewards_cumulative = self.rewards.clone();
+        }
+        self.last_tick = Some(msg.now);
+
+        self.rewards = Default::default();
     }
 }

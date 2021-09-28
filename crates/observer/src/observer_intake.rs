@@ -1,11 +1,14 @@
 use futures::{SinkExt, StreamExt};
 
 use crate::messages::{
-    MessageBlockEventCommission, MessageBlockEventLiveness, MessageBlockEventReward, MessageTX,
+    MessageBlockEventCommission, MessageBlockEventExchangeRate, MessageBlockEventLiveness,
+    MessageBlockEventReward, MessageTX,
 };
 use crate::types::{NewBlock, NewBlockEvent};
 use actix_broker::{Broker, SystemBroker};
 use constellation_shared::AppState;
+use rust_decimal::prelude::FromStr;
+use rust_decimal::Decimal;
 use std::collections::HashMap;
 use terra_rust_api::core_types::Coin;
 use tokio::time::Duration;
@@ -174,7 +177,7 @@ fn process_event(height: u64, is_begin: bool, event: &NewBlockEvent) {
                     }
                 },
                 None => {
-                    log::info!("Rewards Zero? {} {}", height, validator_value);
+                    log::debug!("Rewards Zero? {} {}", height, validator_value);
                     Broker::<SystemBroker>::issue_async(MessageBlockEventReward {
                         height,
                         is_begin,
@@ -213,7 +216,7 @@ fn process_event(height: u64, is_begin: bool, event: &NewBlockEvent) {
                     }
                 },
                 None => {
-                    log::info!("Rewards Zero? {} {}", height, validator_value);
+                    log::debug!("Proposer Rewards Zero? {} {}", height, validator_value);
                     Broker::<SystemBroker>::issue_async(MessageBlockEventReward {
                         height,
                         is_begin,
@@ -304,24 +307,40 @@ fn process_event(height: u64, is_begin: bool, event: &NewBlockEvent) {
             let denom_o = get_required_kv(&attributes, "denom");
 
             if let Some(denom) = denom_o {
-                if denom == "uusd" {
-                    log::info!(
-                        "exchange_rate_update: {} {} {}",
-                        height,
-                        denom,
-                        exchange_rate_o.unwrap_or_default()
-                    )
+                if let Some(exchange_rate) = exchange_rate_o {
+                    if denom == "uusd" {
+                        log::info!(
+                            "exchange_rate_update: {} {} {}",
+                            height,
+                            denom,
+                            exchange_rate
+                        )
+                    } else {
+                        log::debug!(
+                            "exchange_rate_update: {} {} {}",
+                            height,
+                            denom,
+                            exchange_rate
+                        )
+                    }
+
+                    if let Ok(ex_rate) = Decimal::from_str(&exchange_rate) {
+                        Broker::<SystemBroker>::issue_async(MessageBlockEventExchangeRate {
+                            height,
+                            denom,
+                            exchange_rate: ex_rate,
+                        });
+                    }
                 } else {
-                    log::debug!(
-                        "exchange_rate_update: {} {} {}",
+                    log::warn!(
+                        "exchange_rate_update: {} missing rate for denom: {}",
                         height,
-                        denom,
-                        exchange_rate_o.unwrap_or_default()
+                        denom
                     )
                 }
             } else {
-                log::error!(
-                    "exchange_rate_update: {} -missing- {}",
+                log::warn!(
+                    "exchange_rate_update: {} missing denom {}",
                     height,
                     exchange_rate_o.unwrap_or_default()
                 )
