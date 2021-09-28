@@ -146,10 +146,9 @@ async fn run() -> anyhow::Result<()> {
         }
     };
     let state: AppState = Arc::new(Mutex::new(state_data));
-    let mut tasks: Vec<JoinHandle<_>> = Default::default();
-
-    //let (tx_web, _rx_web) = mpsc::channel::<Server>();
-    //    let (tx_observer, rx_observer) = mpsc::channel::<()>();
+    let mut tasks: Vec<JoinHandle<_>> = vec![actix_rt::spawn(constellation_shared::run(
+        Duration::from_secs(60 * 5),
+    ))];
 
     if modules.contains("all") || modules.contains("address-book") {
         tasks.push(actix_rt::spawn(constellation_address_book::run(
