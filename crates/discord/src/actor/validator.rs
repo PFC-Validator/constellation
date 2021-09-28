@@ -319,11 +319,10 @@ impl Handler<ChannelEvent> for DiscordValidatorActor {
                                 Entry::Occupied(mut oc) => {
                                     if oc.get().id != channel_id.id {
                                         log::warn!("Channel changed? {} {}", topic, name);
-                                        oc.insert(channel_id);
                                     } else {
                                         log::info!("Channel updated");
-                                        oc.insert(channel_id);
                                     }
+                                    oc.insert(channel_id);
                                 }
                                 Entry::Vacant(ve) => {
                                     ve.insert(channel_id);
@@ -333,10 +332,8 @@ impl Handler<ChannelEvent> for DiscordValidatorActor {
                                 Entry::Occupied(mut oc) => {
                                     if oc.get() != &topic {
                                         log::warn!("Channel changed? {} {}", topic, name);
-                                        oc.insert(topic);
-                                    } else {
-                                        oc.insert(topic);
                                     }
+                                    oc.insert(topic);
                                 }
                                 Entry::Vacant(ve) => {
                                     ve.insert(topic);
