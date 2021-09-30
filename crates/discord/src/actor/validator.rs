@@ -8,7 +8,7 @@ use actor_discord::types::events::{
 use actor_discord::DiscordAPI;
 use chrono::{DateTime, Utc};
 use constellation_observer::messages::{
-    MessageValidator, MessageValidatorEvent, ValidatorEventType,
+    MessageSendMessageEvent, MessageValidator, MessageValidatorEvent, ValidatorEventType,
 };
 use constellation_observer::BrokerType;
 use std::collections::hash_map::Entry;
@@ -35,6 +35,7 @@ pub struct DiscordValidatorActor {
     pub token: String,
     pub connect_addr: String,
     pub announcement_channel: Option<GuildChannel>,
+    pub private_channel: Option<GuildChannel>,
     pub max_retries: usize,
 }
 
@@ -59,6 +60,7 @@ impl DiscordValidatorActor {
             validator_moniker_map: Default::default(),
             guild_id: None,
             announcement_channel: None,
+            private_channel: None,
             max_retries,
         })
     }
@@ -69,6 +71,7 @@ impl Actor for DiscordValidatorActor {
     fn started(&mut self, ctx: &mut Self::Context) {
         self.subscribe_sync::<BrokerType, MessageValidator>(ctx);
         self.subscribe_sync::<BrokerType, MessageValidatorEvent>(ctx);
+        self.subscribe_sync::<BrokerType, MessageSendMessageEvent>(ctx);
         self.subscribe_sync::<BrokerType, Event>(ctx);
         self.subscribe_sync::<BrokerType, MessageEvent>(ctx);
         self.subscribe_sync::<BrokerType, ChannelEvent>(ctx);
@@ -167,6 +170,16 @@ impl Handler<MessageValidatorEvent> for DiscordValidatorActor {
                     );
                     Some(MessageCreate::markdown(warn_message, &hash_url))
                 }
+                ValidatorEventType::ANNOUNCE => {
+                    let warn_message = format!(
+                        "{} {}",
+                        height,
+                        &msg.message,
+                        //    hash_url
+                    );
+                    Some(MessageCreate::markdown(warn_message, &hash_url))
+                }
+
                 ValidatorEventType::ERROR => {
                     let err_message = format!(
                         "ERROR @{} {} {}",
@@ -192,6 +205,7 @@ impl Handler<MessageValidatorEvent> for DiscordValidatorActor {
         } else {
             None
         };
+
         let formatted_message = format!("Height:{} {}", height, &msg.message);
         log::debug!("WE have a message! {} {}", &moniker, msg.message);
         if let Some(channel_id) = channel_opt {
@@ -200,6 +214,8 @@ impl Handler<MessageValidatorEvent> for DiscordValidatorActor {
                     let message = MessageCreate::markdown(formatted_message, &hash_url);
                     let channel = *channel_id;
                     let announcement_channel = self.announcement_channel;
+                    let private_channel = self.private_channel;
+                    let message_type = msg.event_type;
 
                     //  let moniker = msg.moniker.unwrap_or(operator.clone()).clone();
                     async move {
@@ -211,17 +227,37 @@ impl Handler<MessageValidatorEvent> for DiscordValidatorActor {
                                 )
                                 .await;
                         };
-                        let msg_result = api.create_message(channel, message).await;
-                        match msg_result {
-                            Ok(m) => {
-                                log::debug!(
-                                    "message sent to {} {}",
-                                    moniker.clone(),
-                                    m.id.to_string()
-                                )
+                        match message_type {
+                            ValidatorEventType::PRIVATE => {
+                                if let Some(private) = private_channel {
+                                    let msg_result =
+                                        api.create_message(private.channel_id, message).await;
+                                    match msg_result {
+                                        Ok(m) => {
+                                            log::info!(
+                                                "private message sent to {} {}",
+                                                moniker.clone(),
+                                                m.id.to_string()
+                                            )
+                                        }
+                                        Err(e) => log::error!("Error sending message {}", e),
+                                    };
+                                }
                             }
-                            Err(e) => log::error!("Error sending message {}", e),
-                        };
+                            _ => {
+                                let msg_result = api.create_message(channel, message).await;
+                                match msg_result {
+                                    Ok(m) => {
+                                        log::debug!(
+                                            "message sent to {} {}",
+                                            moniker.clone(),
+                                            m.id.to_string()
+                                        )
+                                    }
+                                    Err(e) => log::error!("Error sending message {}", e),
+                                };
+                            }
+                        }
                     }
                     .into_actor(self)
                     .spawn(ctx)
@@ -232,6 +268,81 @@ impl Handler<MessageValidatorEvent> for DiscordValidatorActor {
             }
         } else {
             log::warn!("Channel for {} not found", operator);
+        }
+    }
+}
+impl Handler<MessageSendMessageEvent> for DiscordValidatorActor {
+    type Result = ();
+
+    fn handle(&mut self, msg: MessageSendMessageEvent, ctx: &mut Self::Context) {
+        let height = msg.height;
+
+        let hash_url = msg.hash.map(|hash| {
+            format!(
+                "[hash](https://finder.extraterrestrial.money/columbus-4/tx/{})",
+                hash
+            )
+        });
+        let announce = if self.announcement_channel.is_some() {
+            match msg.event_type {
+                ValidatorEventType::WARN => {
+                    let warn_message = format!("WARN @{} {}", height, &msg.message,);
+                    Some(MessageCreate::markdown(warn_message, &hash_url))
+                }
+                ValidatorEventType::ANNOUNCE => {
+                    let warn_message = format!("{} {}", height, &msg.message,);
+                    Some(MessageCreate::markdown(warn_message, &hash_url))
+                }
+
+                ValidatorEventType::ERROR => {
+                    let err_message = format!("ERROR @{} {}", height, &msg.message,);
+                    Some(MessageCreate::markdown(err_message, &hash_url))
+                }
+                ValidatorEventType::CRITICAL => {
+                    let err_message = format!("CRITICAL @{} {}", height, &msg.message,);
+                    Some(MessageCreate::markdown(err_message, &hash_url))
+                }
+                _ => None,
+            }
+        } else {
+            None
+        };
+
+        let formatted_message = format!("Height:{} {}", height, &msg.message);
+        log::debug!("WE have a message! {}", msg.message);
+
+        match DiscordAPI::create(&self.token, &self.connect_addr, self.max_retries) {
+            Ok(api) => {
+                let message = MessageCreate::markdown(formatted_message, &hash_url);
+
+                let announcement_channel = self.announcement_channel;
+                let private_channel = self.private_channel;
+                let message_type = msg.event_type;
+
+                async move {
+                    if let Some(announce_msg) = announce {
+                        let _ann_result = api
+                            .create_message(announcement_channel.unwrap().channel_id, announce_msg)
+                            .await;
+                    };
+                    if let ValidatorEventType::PRIVATE = message_type {
+                        if let Some(private) = private_channel {
+                            let msg_result = api.create_message(private.channel_id, message).await;
+                            match msg_result {
+                                Ok(m) => {
+                                    log::info!("private message sent to {}", m.id.to_string())
+                                }
+                                Err(e) => log::error!("Error sending message {}", e),
+                            };
+                        }
+                    }
+                }
+                .into_actor(self)
+                .spawn(ctx)
+            }
+            Err(e) => {
+                log::error!("Unable to create discord api {}", e)
+            }
         }
     }
 }
@@ -263,6 +374,11 @@ impl Handler<Event> for DiscordValidatorActor {
                 for c in gc.channels {
                     if c.name == "announcements" {
                         self.announcement_channel = Some(GuildChannel {
+                            guild_id: gc.id,
+                            channel_id: c.id,
+                        })
+                    } else if c.name == "private" {
+                        self.private_channel = Some(GuildChannel {
                             guild_id: gc.id,
                             channel_id: c.id,
                         })

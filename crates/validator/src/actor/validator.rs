@@ -10,14 +10,15 @@ use terra_rust_api::Terra;
 
 use constellation_observer::messages::{
     MessageBlockEventExchangeRate, MessageBlockEventLiveness, MessageBlockEventReward,
-    MessagePriceAbstain, MessagePriceDrift, MessageValidator, MessageValidatorEvent,
-    MessageValidatorStakedTotal, ValidatorEventType,
+    MessagePriceAbstain, MessagePriceDrift, MessageSendMessageEvent, MessageValidator,
+    MessageValidatorEvent, MessageValidatorStakedTotal, ValidatorEventType,
 };
 use constellation_observer::BrokerType;
 use constellation_shared::{MessageStop, MessageTick};
+use rust_decimal::prelude::FromPrimitive;
 use rust_decimal::Decimal;
 use std::collections::hash_map::Entry;
-use std::ops::Div;
+use std::ops::{Div, Mul};
 
 #[derive(Clone, Debug)]
 pub struct ValidatorDetails {
@@ -391,18 +392,11 @@ impl Handler<MessageTick> for ValidatorActor {
                 rate
             );
             log::info!("{}", message);
-
-            Broker::<SystemBroker>::issue_async(MessageValidatorEvent {
-                height: self.last_height,
-                operator_address: validator.validator.operator_address.clone(),
-                moniker: Some(validator.validator.description.moniker.clone()),
-                event_type: ValidatorEventType::DEBUG,
-                message,
-                hash: None,
-            });
         } else {
             log::warn!("Debug validator not found???");
         }
+        let mut validator_rate: Vec<(String, Decimal)> = Default::default();
+        let mut validator_msg: HashMap<String, String> = Default::default();
         if let Some(last_date) = self.last_tick {
             if msg.now.hour() != last_date.hour() {
                 for validator in &self.rewards_cumulative {
@@ -416,10 +410,12 @@ impl Handler<MessageTick> for ValidatorActor {
                         };
                         rate *= Decimal::from(24); // daily
                                                    // todo rate should be aggregated as tokens change
+                        validator_rate.push((validator.0.clone(), rate));
                         let message = format!(
                             "{} - Generated Rewards of {:0.2} luna over ~{:.2} tokens - Daily Rate {:0.8}",
                             validator_deets.validator.description.moniker, rewards.div(Decimal::from(1_000_000)), tokens.div(1_000_000), rate
                         );
+                        validator_msg.insert(validator.0.clone(), message.clone());
                         Broker::<SystemBroker>::issue_async(MessageValidatorEvent {
                             height: self.last_height,
                             operator_address: validator.0.clone(),
@@ -447,6 +443,70 @@ impl Handler<MessageTick> for ValidatorActor {
             }
         } else {
             self.rewards_cumulative = self.rewards.clone();
+        }
+
+        if !validator_rate.is_empty() {
+            let average_rate: Decimal = validator_rate.iter().map(|f| f.1).sum::<Decimal>()
+                / Decimal::from(validator_rate.len());
+            let slip = average_rate.mul(Decimal::from_f64(0.05).unwrap());
+            let mut top = validator_rate
+                .iter()
+                .filter(|r| r.1 > (average_rate + slip))
+                .collect::<Vec<_>>();
+            top.sort_by(|a, b| a.1.cmp(&b.1));
+
+            let mut bottom = validator_rate
+                .iter()
+                .filter(|r| r.1 < (average_rate - slip))
+                .collect::<Vec<_>>();
+            bottom.sort_by(|a, b| b.1.cmp(&a.1));
+
+            Broker::<SystemBroker>::issue_async(MessageSendMessageEvent {
+                height: self.last_height,
+                event_type: ValidatorEventType::ANNOUNCE,
+                message: format!(
+                    "Average Rate = {:0.8} #over allowance of 5% = {} #below allowance of 5% {}",
+                    average_rate,
+                    top.len(),
+                    bottom.len()
+                ),
+                hash: None,
+            });
+            let top_len = top.len();
+            if top_len > 0 {
+                let top_msg = top
+                    .iter()
+                    .take(5)
+                    .map(|f| validator_msg.get(&f.0).unwrap_or(&f.0))
+                    .fold(String::new(), |a, b| a + b + "\n");
+                Broker::<SystemBroker>::issue_async(MessageSendMessageEvent {
+                    height: self.last_height,
+                    event_type: ValidatorEventType::PRIVATE,
+                    message: format!(
+                        "Top {} - Average: {:0.8}\n{} ",
+                        top_len, average_rate, top_msg
+                    ),
+                    hash: None,
+                });
+            }
+
+            let bot_len = bottom.len();
+            if bot_len > 0 {
+                let bot_msg = bottom
+                    .iter()
+                    .take(5)
+                    .map(|f| validator_msg.get(&f.0).unwrap_or(&f.0))
+                    .fold(String::new(), |a, b| a + b + "\n");
+                Broker::<SystemBroker>::issue_async(MessageSendMessageEvent {
+                    height: self.last_height,
+                    event_type: ValidatorEventType::PRIVATE,
+                    message: format!(
+                        "Bottom {} - Average: {:0.8}\n{} ",
+                        bot_len, average_rate, bot_msg
+                    ),
+                    hash: None,
+                });
+            }
         }
         self.last_tick = Some(msg.now);
 

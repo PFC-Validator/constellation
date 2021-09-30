@@ -96,6 +96,8 @@ pub enum ValidatorEventType {
     WARN,
     ERROR,
     CRITICAL,
+    PRIVATE,
+    ANNOUNCE,
 }
 #[derive(Clone, Debug, Message)]
 #[rtype(result = "()")]
@@ -103,6 +105,14 @@ pub struct MessageValidatorEvent {
     pub height: u64,
     pub operator_address: String,
     pub moniker: Option<String>,
+    pub event_type: ValidatorEventType,
+    pub message: String,
+    pub hash: Option<String>,
+}
+#[derive(Clone, Debug, Message)]
+#[rtype(result = "()")]
+pub struct MessageSendMessageEvent {
+    pub height: u64,
     pub event_type: ValidatorEventType,
     pub message: String,
     pub hash: Option<String>,
