@@ -15,7 +15,7 @@ rustls-tls = [ "tokio-tungstenite/tokio-rustls", "tokio-tungstenite/rustls"]
 tokio-tungstenite = { version = "0.15.0", features = ["tokio-native-tls", "native-tls"]} #, features = ["connect", "stream"], default-features = true }
 constellation-shared= {path="../shared", version ="0.2"}
 
-terra-rust-api = {version ="0.3.7"}
+terra-rust-api = {version ="1.0"}
 tokio = { version = "1.10", features = ["full"] }
 log = "0.4.14"
 anyhow = "1.0"
@@ -28,4 +28,4 @@ actix-rt="2.2.0"
 actix-broker = "0.4.1"
 chrono = "0.4.19"
 rust_decimal="1.15.0"
-constellation-observer={path="../observer", version="0.1"}
+constellation-observer={path="../observer", version="0.2"}

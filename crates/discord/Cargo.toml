@@ -11,7 +11,7 @@ edition = "2018"
 
 [dependencies]
 constellation-shared= {path="../shared", version ="0.2"}
-constellation-observer={path="../observer", version="0.1"}
+constellation-observer={path="../observer", version="0.2"}
 tokio = { version = "1.10", features = ["macros", "rt-multi-thread"] }
 log = "0.4.14"
 anyhow = "1.0"

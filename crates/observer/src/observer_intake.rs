@@ -148,10 +148,9 @@ fn process_block_emit(block: &NewBlock) -> anyhow::Result<()> {
     let v = &block.data.result_end_block.validator_updates;
     v.iter().for_each(|f| {
         log::info!(
-            "Validator update: {} pub key:{}/{} power:{}",
+            "Validator update: {} pub key:{} power:{}",
             height,
-            f.pub_key.s_type,
-            f.pub_key.data,
+            f.pub_key,
             f.power
         )
     });
@@ -400,6 +399,14 @@ fn process_event(height: u64, is_begin: bool, event: &NewBlockEvent) {
                 inflation_o.unwrap_or_default(),
                 annual_provisions_o.unwrap_or_default()
             )
+        }
+        "coin_spent" => {
+            // amount
+            // spender
+        }
+        "coin_received" => {
+            // receiver
+            // amount
         }
         //   "transfer" => {}
         unknown => {

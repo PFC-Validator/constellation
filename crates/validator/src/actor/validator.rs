@@ -109,10 +109,10 @@ impl ValidatorActor {
         let mut cons_pub: HashMap<String, String> = Default::default();
         let mut cons: HashMap<String, String> = Default::default();
         for v in &validator_list {
-            cons_pub.insert(v.consensus_pubkey.clone(), v.operator_address.clone());
+            cons_pub.insert(v.consensus_pubkey.value.clone(), v.operator_address.clone());
         }
         for tm in tendermint_list {
-            if let Some(v_account) = cons_pub.get(&tm.pub_key) {
+            if let Some(v_account) = cons_pub.get(&tm.pub_key.value) {
                 cons.insert(tm.address.clone(), v_account.into());
             }
         }
@@ -122,7 +122,7 @@ impl ValidatorActor {
                 v.operator_address.clone(),
                 ValidatorDetails {
                     validator: v.clone(),
-                    tendermint_account: cons_pub.get(&v.consensus_pubkey).map(|f| f.into()),
+                    tendermint_account: cons_pub.get(&v.consensus_pubkey.value).map(|f| f.into()),
                     first_seen_date: now,
                     last_updated_date: now,
                     first_seen_block: height,

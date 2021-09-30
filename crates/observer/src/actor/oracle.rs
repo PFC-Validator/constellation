@@ -220,42 +220,87 @@ impl Handler<MessageTX> for OracleActor {
 
     fn handle(&mut self, msg: MessageTX, _ctx: &mut Self::Context) {
         let height = msg.tx.height;
-        if msg.tx.tx.s_type == "core/StdTx" {
-            let messages = msg.tx.tx.value;
+        if msg.tx.tx.s_type == "/cosmos.tx.v1beta1.Tx" {
+            // if msg.tx.tx.s_type == "core/StdTx" {
+            let messages = msg.tx.tx.body;
             let txhash = msg.tx.txhash;
-            messages.msg.iter().for_each(|message| {
-                if message.s_type == "oracle/MsgAggregateExchangeRateVote" {
-                    let v = serde_json::from_value::<MsgAggregateExchangeRateVote>(
-                        message.value.clone(),
-                    );
-                    match v {
-                        Ok(vote) => {
-                            //  log::info!("Vote {} {}", vote.validator, vote.feeder);
-                            match Coin::parse_coins(&vote.exchange_rates) {
-                                Ok(rates) => {
-                                    self.validator_vote_last_seen
-                                        .insert(vote.validator.clone(), height);
-                                    self.validator_vote_prices
-                                        .insert(vote.validator.clone(), rates);
-                                    self.validator_vote_last_hash
-                                        .insert(vote.validator.clone(), txhash.clone());
-                                }
-                                Err(e) => {
-                                    log::error!(
-                                        "Bad Rates: {} {} {}",
-                                        vote.validator,
-                                        vote.exchange_rates,
-                                        e
-                                    )
+            for m in &messages.messages {
+                if let Some(message_type) = m.get("@type") {
+                    if message_type == "/terra.oracle.v1beta1.MsgAggregateExchangeRateVote" {
+                        //        log::info!("{} -- {} {} ", height, message_type, m.to_string());
+                        let v = serde_json::from_value::<MsgAggregateExchangeRateVote>(m.clone());
+                        match v {
+                            Ok(vote) => {
+                                //  log::info!("Vote {} {}", vote.validator, vote.feeder);
+                                match Coin::parse_coins(&vote.exchange_rates) {
+                                    Ok(rates) => {
+                                        self.validator_vote_last_seen
+                                            .insert(vote.validator.clone(), height);
+                                        self.validator_vote_prices
+                                            .insert(vote.validator.clone(), rates);
+                                        self.validator_vote_last_hash
+                                            .insert(vote.validator.clone(), txhash.clone());
+                                    }
+                                    Err(e) => {
+                                        log::error!(
+                                            "Bad Rates: {} {} {}",
+                                            vote.validator,
+                                            vote.exchange_rates,
+                                            e
+                                        )
+                                    }
                                 }
                             }
+                            Err(e) => log::error!("Expected vote: {} - {}", e, m.to_string()),
                         }
-                        Err(e) => log::error!("Expected vote: {} - {}", e, message.value),
+                    } else {
+                        log::debug!("{} -- {} ", height, message_type);
+                    }
+                }
+            }
+            /*
+            messages.messages.iter().for_each(|message| {
+                if message.s_type == "oracle/MsgAggregateExchangeRateVote" {
+                    if let Some(execute_msg) = &message.execute_msg {
+                        let v = serde_json::from_value::<MsgAggregateExchangeRateVote>(
+                            execute_msg.clone(),
+                        );
+                        match v {
+                            Ok(vote) => {
+                                //  log::info!("Vote {} {}", vote.validator, vote.feeder);
+                                match Coin::parse_coins(&vote.exchange_rates) {
+                                    Ok(rates) => {
+                                        self.validator_vote_last_seen
+                                            .insert(vote.validator.clone(), height);
+                                        self.validator_vote_prices
+                                            .insert(vote.validator.clone(), rates);
+                                        self.validator_vote_last_hash
+                                            .insert(vote.validator.clone(), txhash.clone());
+                                    }
+                                    Err(e) => {
+                                        log::error!(
+                                            "Bad Rates: {} {} {}",
+                                            vote.validator,
+                                            vote.exchange_rates,
+                                            e
+                                        )
+                                    }
+                                }
+                            }
+                            Err(e) => log::error!("Expected vote: {} - {}", e, execute_msg),
+                        }
                     }
                 }
             })
+
+             */
         } else {
-            log::info!("Height: {} Type {}", msg.tx.height, msg.tx.tx.s_type);
+            log::info!(
+                "Height: {} Type {} Value {:?}",
+                msg.tx.height,
+                msg.tx.tx.s_type,
+                msg.tx.tx.body
+            );
         }
         // make 'laggy' be 2 vote periods
         if height >= self.last_avg_at_height + self.vote_period {

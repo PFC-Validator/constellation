@@ -19,7 +19,7 @@ pub async fn run(_state: AppState, period: Duration, chain_id: String, lcd_endpo
                 match tendermint_validator_set {
                     Ok(tendermint_list) => {
                         tendermint_list.result.validators.iter().for_each(|v| {
-                            tendermint.insert(v.pub_key.clone(), v.clone());
+                            tendermint.insert(v.pub_key.value.clone(), v.clone());
                         });
                     }
                     Err(e) => log::error!("Can't obtain tendermint validator set {}", e),
@@ -33,7 +33,7 @@ pub async fn run(_state: AppState, period: Duration, chain_id: String, lcd_endpo
                                 height: validator_result.height,
                                 operator_address: v.operator_address.clone(),
                                 validator: v.clone(),
-                                tendermint: tendermint.get(&v.consensus_pubkey).cloned(),
+                                tendermint: tendermint.get(&v.consensus_pubkey.value).cloned(),
                             });
                         })
                     }

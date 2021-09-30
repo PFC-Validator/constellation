@@ -44,26 +44,32 @@ pub struct TXandResult {
     pub tx: TxOuter,
     #[serde(with = "terra_datetime_format")]
     pub timestamp: DateTime<Utc>,
+    // body
+    // signatures
+    // auth_info
 }
 
 #[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct TxOuter {
-    #[serde(rename = "type")]
+    #[serde(rename = "@type")]
     pub s_type: String,
-    pub value: BlockTransaction,
+    pub body: BlockTransaction,
 }
 #[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct BlockTransaction {
-    pub msg: Vec<BlockMsg>,
-    pub fee: Fee,
-    pub signatures: Vec<TransactionSignature>,
+    pub messages: Vec<Value>,
+    //pub fee: Fee,
+    //pub signatures: Vec<String>,
     pub memo: String,
 }
 #[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct BlockMsg {
-    #[serde(rename = "type")]
+    #[serde(rename = "@type")]
     pub s_type: String,
-    pub value: serde_json::Value,
+    pub execute_msg: Option<serde_json::Value>,
+    // sender
+    // contract
+    // coins
 }
 #[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct Fee {
@@ -103,6 +109,7 @@ pub struct NewBlockAttributes {
     pub key: String,
     #[serde(with = "b64_o_format")]
     pub value: Option<String>,
+    pub index: bool,
 }
 #[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct NewBlockEndBlock {
@@ -111,19 +118,20 @@ pub struct NewBlockEndBlock {
 }
 #[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct PubKey {
-    #[serde(rename = "type")]
+    #[serde(rename = "@type")]
     pub s_type: String,
     pub data: String,
 }
 #[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct TransactionSignaturePubKey {
-    #[serde(rename = "type")]
-    pub s_type: String,
+    // #[serde(rename = "type")]
+    // pub s_type: String,
     pub value: Value, // this can either be a string, or a array if type == tendermint/PubKeyMultisigThreshold
 }
 #[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct NewBlockValidatorUpdate {
-    pub pub_key: PubKey,
+    // todo fix it l8r
+    pub pub_key: Value,
     #[serde(with = "terra_u64_format")]
     pub power: u64,
 }
