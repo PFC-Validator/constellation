@@ -41,7 +41,7 @@ pub async fn run(_state: AppState, connect_addr: String) {
                         log::info!("Connected");
                         //  let (mut write, read) = ws_stream.split();
                         let msg = Message::text(
-                            "{\"subscribe\":\"new_block\",\"chain_id\":\"columbus-4\"}",
+                            "{\"subscribe\":\"new_block\",\"chain_id\":\"columbus-5\"}",
                         );
                         match ws_stream.send(msg).await {
                             Ok(_) => {

@@ -51,9 +51,9 @@ struct Cli {
     #[structopt(
         name = "chain",
         env = "TERRARUST_CHAIN",
-        default_value = "columbus-4",
+        default_value = "columbus-5",
         long = "chain",
-        help = "tequila-0004 is testnet, columbus-4 is main-net"
+        help = "bombay-12 is testnet, columbus-5 is main-net"
     )]
     chain_id: String,
     #[structopt(
