@@ -170,7 +170,7 @@ impl OracleActor {
                                 }
                             }
                         } else {
-                            log::warn!("Validator: {} missing denom {}", f.0, denom);
+                            log::warn!("Validator: {} missing denom {}", operator_address, denom);
                         }
                     })
             });

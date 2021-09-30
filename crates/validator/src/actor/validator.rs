@@ -453,13 +453,13 @@ impl Handler<MessageTick> for ValidatorActor {
                 .iter()
                 .filter(|r| r.1 > (average_rate + slip))
                 .collect::<Vec<_>>();
-            top.sort_by(|a, b| a.1.cmp(&b.1));
+            top.sort_by(|a, b| b.1.cmp(&a.1));
 
             let mut bottom = validator_rate
                 .iter()
                 .filter(|r| r.1 < (average_rate - slip))
                 .collect::<Vec<_>>();
-            bottom.sort_by(|a, b| b.1.cmp(&a.1));
+            bottom.sort_by(|a, b| a.1.cmp(&b.1));
 
             Broker::<SystemBroker>::issue_async(MessageSendMessageEvent {
                 height: self.last_height,

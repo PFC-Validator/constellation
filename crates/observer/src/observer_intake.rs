@@ -36,71 +36,86 @@ pub async fn run(_state: AppState, connect_addr: String) {
             .body(())
         {
             Ok(ws_request) => {
-                let (mut ws_stream, _) =
-                    connect_async(ws_request).await.expect("Failed to connect");
-                log::info!("Connected");
-                //  let (mut write, read) = ws_stream.split();
-                let msg =
-                    Message::text("{\"subscribe\":\"new_block\",\"chain_id\":\"columbus-4\"}");
-                match ws_stream.send(msg).await {
-                    Ok(_) => {
-                        while let Some(message) = ws_stream.next().await {
-                            // read.for_each(|message| async {
-                            match message {
-                                Ok(msg) => {
-                                    /*
-                                    log::info!(
-                                        "empty {} ping {} pong {} bin {} text {} close {} len {}",
-                                        msg.is_empty(),
-                                        msg.is_ping(),
-                                        msg.is_pong(),
-                                        msg.is_binary(),
-                                        msg.is_text(),
-                                        msg.is_close(),
-                                        msg.len()
-                                    );
+                match connect_async(ws_request).await {
+                    Ok((mut ws_stream, _)) => {
+                        log::info!("Connected");
+                        //  let (mut write, read) = ws_stream.split();
+                        let msg = Message::text(
+                            "{\"subscribe\":\"new_block\",\"chain_id\":\"columbus-4\"}",
+                        );
+                        match ws_stream.send(msg).await {
+                            Ok(_) => {
+                                while let Some(message) = ws_stream.next().await {
+                                    // read.for_each(|message| async {
+                                    match message {
+                                        Ok(msg) => {
+                                            /*
+                                            log::info!(
+                                                "empty {} ping {} pong {} bin {} text {} close {} len {}",
+                                                msg.is_empty(),
+                                                msg.is_ping(),
+                                                msg.is_pong(),
+                                                msg.is_binary(),
+                                                msg.is_text(),
+                                                msg.is_close(),
+                                                msg.len()
+                                            );
 
-                                     */
-                                    match msg {
-                                        Message::Text(text) => {
-                                            match serde_json::from_str::<NewBlock>(&text) {
-                                                Ok(new_block) => {
-                                                    log::info!(
-                                                        "Block:{} {}",
-                                                        new_block.chain_id,
-                                                        new_block.data.block.header.height
-                                                    );
-                                                    if let Err(e) = process_block_emit(&new_block) {
-                                                        log::error!(
+                                             */
+                                            match msg {
+                                                Message::Text(text) => {
+                                                    match serde_json::from_str::<NewBlock>(&text) {
+                                                        Ok(new_block) => {
+                                                            log::info!(
+                                                                "Block:{} {}",
+                                                                new_block.chain_id,
+                                                                new_block.data.block.header.height
+                                                            );
+                                                            if let Err(e) =
+                                                                process_block_emit(&new_block)
+                                                            {
+                                                                log::error!(
                                                             "Error pushing block to actors: {}",
                                                             e
                                                         );
+                                                            }
+                                                        }
+                                                        Err(e) => {
+                                                            log::error!(
+                                                                "Error parsing block: {}",
+                                                                e
+                                                            );
+                                                            log::error!("{}", text);
+                                                        }
                                                     }
                                                 }
-                                                Err(e) => {
-                                                    log::error!("Error parsing block: {}", e);
-                                                    log::error!("{}", text);
+                                                Message::Binary(_) => {}
+                                                Message::Ping(p) => {
+                                                    let pong = Message::Pong(p);
+                                                    if let Err(e) = ws_stream.send(pong).await {
+                                                        log::error!(
+                                                            "Unable to respond pong {:#?}",
+                                                            e
+                                                        )
+                                                    }
+                                                }
+                                                Message::Pong(_) => {}
+                                                Message::Close(_) => {
+                                                    log::warn!("Socket Closing..TBD do something")
                                                 }
                                             }
                                         }
-                                        Message::Binary(_) => {}
-                                        Message::Ping(p) => {
-                                            let pong = Message::Pong(p);
-                                            if let Err(e) = ws_stream.send(pong).await {
-                                                log::error!("Unable to respond pong {:#?}", e)
-                                            }
+                                        Err(e) => {
+                                            log::error!("{:#?}", e)
                                         }
-                                        Message::Pong(_) => {}
-                                        Message::Close(_) => {}
                                     }
                                 }
-                                Err(e) => {
-                                    log::error!("{:#?}", e)
-                                }
                             }
+                            Err(e) => log::error!("Unable to send message {:#?}", e),
                         }
                     }
-                    Err(e) => log::error!("Unable to send message {:#?}", e),
+
+                    Err(e) => log::error!("Failed to Connect to observer:{:?}", e),
                 }
             }
             Err(e) => log::error!("Unable to initiate observer:{}", e),
