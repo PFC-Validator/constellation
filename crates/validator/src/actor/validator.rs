@@ -494,7 +494,7 @@ impl Handler<MessageTick> for ValidatorActor {
             if bot_len > 0 {
                 let bot_msg = bottom
                     .iter()
-                    .take(5)
+                    .take(10)
                     .map(|f| validator_msg.get(&f.0).unwrap_or(&f.0))
                     .fold(String::new(), |a, b| a + b + "\n");
                 Broker::<SystemBroker>::issue_async(MessageSendMessageEvent {
