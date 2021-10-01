@@ -653,6 +653,7 @@ dependencies = [
 [[package]]
 name = "constellation-observer"
 version = "0.2.1"
+source = "git+https://github.com/PFC-Validator/constellation-observer.git#62f8873352bdf93587ca5be7be7f114647cc0f87"
 dependencies = [
  "actix",
  "actix-broker",
@@ -695,6 +696,7 @@ dependencies = [
 [[package]]
 name = "constellation-shared"
 version = "0.2.1"
+source = "git+https://github.com/PFC-Validator/constellation-shared.git#03e72a27a7c89c4c163ea125949c2d126e7b2b60"
 dependencies = [
  "actix",
  "actix-broker",
