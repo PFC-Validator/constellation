@@ -35,7 +35,7 @@ rust_decimal_macros = "1.15.0"
 httparse="1.5.1"
 terra-rust-api = {version ="1.0"}
 constellation-shared={ git = "https://github.com/PFC-Validator/constellation-shared.git", version = "0.2"}
-constellation-observer={ git = "https://github.com/PFC-Validator/constellation-observer.git", version = "0.2"}
+constellation-observer={ git = "https://github.com/PFC-Validator/constellation-observer.git", version = "0.2.2"}
 constellation-validator={ path = "./crates/validator", version = "0.1"}
 constellation-discord={ path = "./crates/discord", version = "0.1"}
 constellation-bgp={ path = "./crates/bgp", version = "0.1"}

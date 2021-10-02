@@ -652,8 +652,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-observer"
-version = "0.2.1"
-source = "git+https://github.com/PFC-Validator/constellation-observer.git#62f8873352bdf93587ca5be7be7f114647cc0f87"
+version = "0.2.2"
+source = "git+https://github.com/PFC-Validator/constellation-observer.git#dd0cf138783f1f7778254c1076b9c21559f3f89a"
 dependencies = [
  "actix",
  "actix-broker",
@@ -669,6 +669,7 @@ dependencies = [
  "serde",
  "serde_json",
  "terra-rust-api",
+ "thiserror",
  "tokio",
  "tokio-tungstenite",
 ]
@@ -1168,9 +1169,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.3.5"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b21b78895ff1ade3f8df6a9a77917f20dc8b46d0069dd5a3837cf1f507a70ee"
+checksum = "6c06815895acec637cd6ed6e9662c935b866d20a106f8361892893a7d9234964"
 dependencies = [
  "bytes",
  "fnv",
@@ -2527,9 +2528,9 @@ dependencies = [
 
 [[package]]
 name = "terra-rust-api"
-version = "1.0.5"
+version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d3bec6f98f202e21774cd4cfbd0826a76eed3a57aae17f945b555509afd554f"
+checksum = "bac822a84711b026aa4a91ffb128831d3356c9d8568797a911136938315e4f0c"
 dependencies = [
  "anyhow",
  "base64",
@@ -2754,9 +2755,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-core"
-version = "0.1.20"
+version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46125608c26121c81b0c6d693eab5a420e416da7e43c426d2e8f7df8da8a3acf"
+checksum = "1f4ed65637b8390770814083d20756f87bfa2c21bf2f110babdc5438351746e4"
 dependencies = [
  "lazy_static",
 ]
