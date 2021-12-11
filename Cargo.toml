@@ -8,8 +8,8 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["native-tls"]
-native-tls = ["reqwest/native-tls", "constellation-observer/native-tls"]#, "constellation-discord/native-tls"]
-rustls-tls = ["reqwest/rustls-tls", "constellation-observer/rustls-tls"]#, "constellation-discord/rustls-tls"]
+native-tls = ["reqwest/native-tls", "constellation-web-socket/native-tls"]#, "constellation-discord/native-tls"]
+rustls-tls = ["reqwest/rustls-tls", "constellation-web-socket/rustls-tls"]#, "constellation-discord/rustls-tls"]
 
 [dependencies]
 tokio = { version = "1.10", features = ["full"] }
@@ -33,9 +33,10 @@ actix-broker = "0.4.1"
 rust_decimal = "1.15.0"
 rust_decimal_macros = "1.15.0"
 httparse="1.5.1"
-terra-rust-api = {version ="1.0"}
-constellation-shared={ git = "https://github.com/PFC-Validator/constellation-shared.git", version = "0.2"}
-constellation-observer={ git = "https://github.com/PFC-Validator/constellation-observer.git", version = "0.2.2"}
+terra-rust-api = {version ="1.1.1"}
+constellation-shared={ git ="https://github.com/PFC-Validator/constellation-shared.git", version = "0.3"}
+constellation-web-socket={ path = "../constellation-web-socket", version = "0.1"}
+constellation-price-oracle={path="../constellation-price-oracle", version = "0.1"}
 constellation-validator={ path = "./crates/validator", version = "0.1"}
 constellation-discord={ path = "./crates/discord", version = "0.1"}
 constellation-bgp={ path = "./crates/bgp", version = "0.1"}

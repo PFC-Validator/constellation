@@ -26,5 +26,6 @@ actix-rt="2.2.0"
 actix-broker = "0.4.1"
 chrono = "0.4.19"
 rust_decimal="1.15.0"
-constellation-observer={git="https://github.com/PFC-Validator/constellation-observer.git", version="0.2"}
-constellation-shared={ git = "https://github.com/PFC-Validator/constellation-shared.git", version = "0.2"}
+constellation-web-socket={path="../../../constellation-web-socket", version="0.1"}
+constellation-price-oracle={path="../../../constellation-price-oracle", version="0.1"}
+constellation-shared={ git = "https://github.com/PFC-Validator/constellation-shared.git", version = "0.3"}

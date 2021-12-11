@@ -188,14 +188,15 @@ async fn run() -> anyhow::Result<()> {
         )));
     }
     if modules.contains("all") || modules.contains("observer") {
-        tasks.push(actix_rt::spawn(constellation_observer::run(
+        tasks.push(actix_rt::spawn(constellation_web_socket::run(
             state.clone(),
-            //tx_observer,
-            "wss://observer.terra.dev/".into(),
+            "ws://127.0.0.1:26657/websocket".into(),
         )));
-        let oracle_actor =
-            constellation_observer::actor::OracleActor::create(&cli.lcd_endpoint, &cli.chain_id)
-                .await?;
+        let oracle_actor = constellation_price_oracle::actor::OracleActor::create(
+            &cli.lcd_endpoint,
+            &cli.chain_id,
+        )
+        .await?;
 
         oracle_actor.start();
     }

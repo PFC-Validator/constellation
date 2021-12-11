@@ -7,10 +7,10 @@ use actor_discord::types::events::{
 };
 use actor_discord::DiscordAPI;
 use chrono::{DateTime, Utc};
-use constellation_observer::messages::{
+use constellation_price_oracle::messages::{
     MessageSendMessageEvent, MessageValidator, MessageValidatorEvent, ValidatorEventType,
 };
-use constellation_observer::BrokerType;
+use constellation_price_oracle::BrokerType;
 use std::collections::hash_map::Entry;
 
 pub struct BlockHeightTime {

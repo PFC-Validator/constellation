@@ -8,13 +8,15 @@ use terra_rust_api::staking_types;
 use terra_rust_api::tendermint_types;
 use terra_rust_api::Terra;
 
-use constellation_observer::messages::{
-    MessageBlockEventExchangeRate, MessageBlockEventLiveness, MessageBlockEventReward,
+use constellation_price_oracle::messages::{
     MessagePriceAbstain, MessagePriceDrift, MessageSendMessageEvent, MessageValidator,
     MessageValidatorEvent, MessageValidatorStakedTotal, ValidatorEventType,
 };
-use constellation_observer::BrokerType;
+use constellation_price_oracle::BrokerType;
 use constellation_shared::{MessageStop, MessageTick};
+use constellation_web_socket::messages::{
+    MessageBlockEventExchangeRate, MessageBlockEventLiveness, MessageBlockEventReward,
+};
 use rust_decimal::prelude::FromPrimitive;
 use rust_decimal::Decimal;
 use std::collections::hash_map::Entry;
@@ -54,46 +56,41 @@ pub struct ValidatorActor {
 impl ValidatorActor {
     pub async fn create(lcd: &str, chain: &str) -> anyhow::Result<ValidatorActor> {
         log::info!("Validator Actor starting up");
-        match Terra::lcd_client_no_tx(lcd, chain).await {
-            Ok(terra) => match terra.staking().validators().await {
-                Ok(validator_result) => match terra.tendermint().validatorsets_full().await {
-                    Ok(tendermint_result) => {
-                        log::info!(
-                            "Have validator/tendermint list kickstart v:{} t:{}",
-                            validator_result.result.len(),
-                            tendermint_result.result.validators.len()
-                        );
-                        let merged_validator_lists = ValidatorActor::from_validator_list(
-                            validator_result.height,
-                            validator_result.result,
-                            tendermint_result.result.validators,
-                        );
-                        Ok(ValidatorActor {
-                            last_height: 0,
-                            last_tick: None,
-                            validators: merged_validator_lists.validator_details,
-                            moniker: merged_validator_lists.monikers,
-                            cons_pub: merged_validator_lists.cons_pub,
-                            cons: merged_validator_lists.cons,
-                            rewards: Default::default(),
-                            rewards_cumulative: Default::default(),
-                            rates: Default::default(),
-                            lcd: lcd.into(),
-                            chain: chain.into(),
-                        })
-                    }
-                    Err(e) => {
-                        log::error!("validator sets {}", e);
-                        Err(e)
-                    }
-                },
+        let terra = Terra::lcd_client_no_tx(lcd, chain);
+        match terra.staking().validators().await {
+            Ok(validator_result) => match terra.tendermint().validatorsets_full().await {
+                Ok(tendermint_result) => {
+                    log::info!(
+                        "Have validator/tendermint list kickstart v:{} t:{}",
+                        validator_result.result.len(),
+                        tendermint_result.result.validators.len()
+                    );
+                    let merged_validator_lists = ValidatorActor::from_validator_list(
+                        validator_result.height,
+                        validator_result.result,
+                        tendermint_result.result.validators,
+                    );
+                    Ok(ValidatorActor {
+                        last_height: 0,
+                        last_tick: None,
+                        validators: merged_validator_lists.validator_details,
+                        moniker: merged_validator_lists.monikers,
+                        cons_pub: merged_validator_lists.cons_pub,
+                        cons: merged_validator_lists.cons,
+                        rewards: Default::default(),
+                        rewards_cumulative: Default::default(),
+                        rates: Default::default(),
+                        lcd: lcd.into(),
+                        chain: chain.into(),
+                    })
+                }
                 Err(e) => {
-                    log::error!("staking validators {}", e);
+                    log::error!("validator sets {}", e);
                     Err(e)
                 }
             },
             Err(e) => {
-                log::error!("LCD Client {}", e);
+                log::error!("staking validators {}", e);
                 Err(e)
             }
         }

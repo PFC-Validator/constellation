@@ -11,7 +11,7 @@ edition = "2018"
 
 [dependencies]
 
-tokio = { version = "1.10", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.14.0", features = ["macros", "rt-multi-thread"] }
 log = "0.4.14"
 anyhow = "1.0"
 thiserror = "1.0.28"
@@ -24,4 +24,4 @@ actix-broker = "0.4.1"
 chrono = "0.4.19"
 rust_decimal="1.15.0"
 maxminddb = "0.21.0"
-constellation-shared={ git = "https://github.com/PFC-Validator/constellation-shared.git", version = "0.2"}
+constellation-shared={ git ="https://github.com/PFC-Validator/constellation-shared.git", version = "0.3"}

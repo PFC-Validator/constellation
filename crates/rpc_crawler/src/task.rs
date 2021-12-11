@@ -13,25 +13,17 @@ pub async fn run(
     log::info!("{} {}", lcd_endpoint, rpc_endpoint);
     let mut interval = time::interval(period);
     loop {
-        match Terra::lcd_client_no_tx(&lcd_endpoint, &chain_id).await {
-            Ok(terra) => match run_task(&state, &terra, &rpc_endpoint).await {
-                Ok(_) => {}
-                Err(e) => {
-                    log::error!("RPC Crawler: {}", e)
-                }
-            },
+        let terra = Terra::lcd_client_no_tx(&lcd_endpoint, &chain_id);
+        match run_task(&state, &terra, &rpc_endpoint).await {
+            Ok(_) => {}
             Err(e) => {
-                log::error!("creating LCD: {}", e)
+                log::error!("RPC Crawler: {}", e)
             }
         }
         interval.tick().await;
     }
 }
-pub async fn run_task(
-    _state: &AppState,
-    terra: &Terra<'_>,
-    rpc_endpoint: &str,
-) -> anyhow::Result<()> {
+pub async fn run_task(_state: &AppState, terra: &Terra, rpc_endpoint: &str) -> anyhow::Result<()> {
     let rpc = terra.rpc(rpc_endpoint);
     match rpc.net_info().await {
         Ok(net_info) => {
