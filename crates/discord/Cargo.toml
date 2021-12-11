@@ -8,7 +8,7 @@ edition = "2018"
 default = ["native-tls"]
 #native-tls = [ "serenity/native_tls_backend", "serenity/default_native_tls"]
 #rustls-tls = [ "serenity/rustls_backend"]
-native-tls = ["actor-discord/native-tls"]
+native-tls = ["actor-discord/rust-tls"]
 rustls-tls = ["actor-discord/rust-tls"]
 [dependencies]
 
