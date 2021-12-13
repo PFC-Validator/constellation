@@ -255,6 +255,7 @@ dependencies = [
 [[package]]
 name = "actor-discord"
 version = "0.2.5"
+source = "git+https://github.com/PFC-Validator/actor-discord.git#0bf8b5bd56ca089d1a253aad2d4f75494ef8298a"
 dependencies = [
  "actix",
  "actix-broker",
