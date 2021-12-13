@@ -125,7 +125,11 @@ async fn run() -> anyhow::Result<()> {
     let discord_retries: usize = cli.discord_retries;
     let mut modules: HashSet<_> = cli.run_modules.split(',').collect();
     if modules.contains("validator") {
-        modules.insert("observer");
+        modules.insert("websocket");
+    }
+    if modules.contains("price") {
+        modules.insert("oracle");
+        modules.insert("websocket");
     }
 
     for module in modules.iter() {
@@ -187,11 +191,13 @@ async fn run() -> anyhow::Result<()> {
             cli.rpc_endpoint.clone(),
         )));
     }
-    if modules.contains("all") || modules.contains("observer") {
+    if modules.contains("all") || modules.contains("websocket") {
         tasks.push(actix_rt::spawn(constellation_web_socket::run(
             state.clone(),
             "ws://127.0.0.1:26657/websocket".into(),
         )));
+    }
+    if modules.contains("all") || modules.contains("oracle") {
         let oracle_actor = constellation_price_oracle::actor::OracleActor::create(
             &cli.lcd_endpoint,
             &cli.chain_id,
@@ -200,6 +206,20 @@ async fn run() -> anyhow::Result<()> {
 
         oracle_actor.start();
     }
+    #[cfg(feature = "private")]
+    {
+        if modules.contains("all") || modules.contains("price") {
+            log::info!("Starting private price check module");
+            let price_actor = constellation_price_check::actor::PriceCheckActor::create(
+                &cli.lcd_endpoint,
+                &cli.chain_id,
+            )
+            .await?;
+
+            price_actor.start();
+        }
+    }
+
     if modules.contains("all") || modules.contains("validator") {
         log::info!("Validator turned on");
         tasks.push(actix_rt::spawn(constellation_validator::run(

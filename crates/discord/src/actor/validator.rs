@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::BrokerType;
 use actix::prelude::*;
 use actix_broker::BrokerSubscribe;
 use actor_discord::types::events::{
@@ -10,7 +11,6 @@ use chrono::{DateTime, Utc};
 use constellation_price_oracle::messages::{
     MessageSendMessageEvent, MessageValidator, MessageValidatorEvent, ValidatorEventType,
 };
-use constellation_price_oracle::BrokerType;
 use std::collections::hash_map::Entry;
 
 pub struct BlockHeightTime {

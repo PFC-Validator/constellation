@@ -8,11 +8,11 @@ use terra_rust_api::staking_types;
 use terra_rust_api::tendermint_types;
 use terra_rust_api::Terra;
 
+use crate::BrokerType;
 use constellation_price_oracle::messages::{
     MessagePriceAbstain, MessagePriceDrift, MessageSendMessageEvent, MessageValidator,
     MessageValidatorEvent, MessageValidatorStakedTotal, ValidatorEventType,
 };
-use constellation_price_oracle::BrokerType;
 use constellation_shared::{MessageStop, MessageTick};
 use constellation_web_socket::messages::{
     MessageBlockEventExchangeRate, MessageBlockEventLiveness, MessageBlockEventReward,
@@ -359,6 +359,7 @@ impl Handler<MessageBlockEventExchangeRate> for ValidatorActor {
 
     fn handle(&mut self, msg: MessageBlockEventExchangeRate, _ctx: &mut Self::Context) {
         self.last_height = msg.height;
+        //log::info!("Exchange rate {}/{}", msg.denom, msg.exchange_rate);
         self.rates.insert(msg.denom, msg.exchange_rate);
     }
 }

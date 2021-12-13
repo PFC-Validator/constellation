@@ -3,12 +3,6 @@ pub mod actor;
 mod errors;
 mod task;
 
+use actix_broker::SystemBroker;
 pub use task::run;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub(crate) type BrokerType = SystemBroker;

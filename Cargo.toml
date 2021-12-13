@@ -1,6 +1,6 @@
 [package]
 name = "constellation"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2018"
 license = "Apache-2.0"
 description = "Constellation oversees all the plants and things in the cosmos to ensure we can moon"
@@ -10,6 +10,7 @@ readme = "README.md"
 default = ["native-tls"]
 native-tls = ["reqwest/native-tls", "constellation-web-socket/native-tls"]#, "constellation-discord/native-tls"]
 rustls-tls = ["reqwest/rustls-tls", "constellation-web-socket/rustls-tls"]#, "constellation-discord/rustls-tls"]
+private=["constellation-price-check"]
 
 [dependencies]
 tokio = { version = "1.10", features = ["full"] }
@@ -25,7 +26,6 @@ url = "2.2.2"
 structopt = "0.3"
 chrono = "0.4.19"
 futures = "0.3.16"
-
 actix="0.12.0"
 actix-web = "4.0.0-beta.8"
 actix-rt = "2.2.0"
@@ -35,8 +35,12 @@ rust_decimal_macros = "1.15.0"
 httparse="1.5.1"
 terra-rust-api = {version ="1.1.1"}
 constellation-shared={ git ="https://github.com/PFC-Validator/constellation-shared.git", version = "0.3"}
-constellation-web-socket={ path = "../constellation-web-socket", version = "0.1"}
-constellation-price-oracle={path="../constellation-price-oracle", version = "0.1"}
+constellation-web-socket={ git = "https://github.com/PFC-Validator/constellation-web-socket.git", version = "0.1.1"}
+#{ path = "../constellation-web-socket", version = "0.1.0"}
+#
+constellation-price-oracle={ git = "https://github.com/PFC-Validator/constellation-price-oracle.git", version = "0.1.1"}
+
+#{path="../constellation-price-oracle", version = "0.1"}
 constellation-validator={ path = "./crates/validator", version = "0.1"}
 constellation-discord={ path = "./crates/discord", version = "0.1"}
 constellation-bgp={ path = "./crates/bgp", version = "0.1"}
@@ -45,6 +49,8 @@ constellation-address-book={path="./crates/address_book", version="0.1"}
 constellation-rpc-crawler={path="./crates/rpc_crawler", version="0.1"}
 constellation-state-checkpoint={path="./crates/state_checkpoint", version="0.1"}
 constellation-web={path="./crates/web", version="0.1"}
+
+constellation-price-check={git=  "https://github.com/PFC-Validator/constellation-price-check.git", version = "0.1", optional = true}
 
 [workspace]
 members=[

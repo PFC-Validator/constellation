@@ -13,8 +13,8 @@ rustls-tls = ["actor-discord/rust-tls"]
 [dependencies]
 
 constellation-shared={ git ="https://github.com/PFC-Validator/constellation-shared.git", version = "0.3"}
-#constellation-web-socket={ path = "../../../constellation-web-socket", version = "0.1"}
-constellation-price-oracle={path="../../../constellation-price-oracle", version="0.1"}
+constellation-price-oracle={ git = "https://github.com/PFC-Validator/constellation-price-oracle.git", version = "0.1.1"}
+#{path="../../../constellation-price-oracle", version="0.1"}
 tokio = { version = "1.14.0", features = ["macros", "rt-multi-thread"] }
 log = "0.4.14"
 anyhow = "1.0"
