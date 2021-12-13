@@ -50,7 +50,7 @@ constellation-rpc-crawler={path="./crates/rpc_crawler", version="0.1"}
 constellation-state-checkpoint={path="./crates/state_checkpoint", version="0.1"}
 constellation-web={path="./crates/web", version="0.1"}
 
-constellation-price-check={git=  "https://github.com/PFC-Validator/constellation-price-check.git", version = "0.1", optional = true}
+constellation-price-check={git=  "ssh://git@github.com/PFC-Validator/constellation-price-check.git", version = "0.1", optional = true}
 
 [workspace]
 members=[

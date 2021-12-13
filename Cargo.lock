@@ -659,7 +659,7 @@ dependencies = [
 [[package]]
 name = "constellation-price-check"
 version = "0.1.0"
-source = "git+https://github.com/PFC-Validator/constellation-price-check.git#d5f1b07aca86b8caeeb243564ddb60d574233b0f"
+source = "git+ssh://git@github.com/PFC-Validator/constellation-price-check.git#d5f1b07aca86b8caeeb243564ddb60d574233b0f"
 dependencies = [
  "actix",
  "actix-broker",
