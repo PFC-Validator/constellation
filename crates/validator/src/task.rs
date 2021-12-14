@@ -1,5 +1,5 @@
 use actix_broker::{Broker, SystemBroker};
-use constellation_price_oracle::messages::MessageValidator;
+use constellation_shared::messages::MessageValidator;
 use constellation_shared::state::AppState;
 use std::collections::HashMap;
 use std::time::Duration;

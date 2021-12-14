@@ -9,14 +9,14 @@ use terra_rust_api::tendermint_types;
 use terra_rust_api::Terra;
 
 use crate::BrokerType;
-use constellation_price_oracle::messages::{
-    MessagePriceAbstain, MessagePriceDrift, MessageSendMessageEvent, MessageValidator,
-    MessageValidatorEvent, MessageValidatorStakedTotal, ValidatorEventType,
-};
-use constellation_shared::{MessageStop, MessageTick};
-use constellation_web_socket::messages::{
+use constellation_shared::messages::{
     MessageBlockEventExchangeRate, MessageBlockEventLiveness, MessageBlockEventReward,
 };
+use constellation_shared::messages::{
+    MessagePriceAbstain, MessagePriceDrift, MessageSendMessageEvent, MessageValidator,
+    MessageValidatorEvent, MessageValidatorStakedTotal, SendMessageEventType,
+};
+use constellation_shared::{MessageStop, MessageTick};
 use rust_decimal::prelude::FromPrimitive;
 use rust_decimal::Decimal;
 use std::collections::hash_map::Entry;
@@ -237,7 +237,7 @@ impl Handler<MessagePriceAbstain> for ValidatorActor {
                         height,
                         operator_address: msg.operator_address.clone(),
                         moniker: Some(v.validator.description.moniker.clone()),
-                        event_type: ValidatorEventType::INFO,
+                        event_type: SendMessageEventType::INFO,
                         message,
                         hash: Some(msg.txhash),
                     });
@@ -278,7 +278,7 @@ impl Handler<MessagePriceDrift> for ValidatorActor {
                     height,
                     operator_address: msg.operator_address.clone(),
                     moniker: Some(v.validator.description.moniker.clone()),
-                    event_type: ValidatorEventType::WARN,
+                    event_type: SendMessageEventType::WARN,
                     message,
                     hash: Some(msg.txhash),
                 });
@@ -306,7 +306,7 @@ impl Handler<MessageBlockEventLiveness> for ValidatorActor {
                         height,
                         operator_address: validator_address.clone(),
                         moniker: Some(v.validator.description.moniker.clone()),
-                        event_type: ValidatorEventType::WARN,
+                        event_type: SendMessageEventType::WARN,
                         message,
                         hash: None,
                     });
@@ -418,7 +418,7 @@ impl Handler<MessageTick> for ValidatorActor {
                             height: self.last_height,
                             operator_address: validator.0.clone(),
                             moniker: Some(validator_deets.validator.description.moniker.clone()),
-                            event_type: ValidatorEventType::INFO,
+                            event_type: SendMessageEventType::INFO,
                             message,
                             hash: None,
                         });
@@ -461,7 +461,7 @@ impl Handler<MessageTick> for ValidatorActor {
 
             Broker::<SystemBroker>::issue_async(MessageSendMessageEvent {
                 height: self.last_height,
-                event_type: ValidatorEventType::ANNOUNCE,
+                event_type: SendMessageEventType::ANNOUNCE,
                 message: format!(
                     "Average Rate = {:0.8} #over allowance of 5% = {} #below allowance of 5% {}",
                     average_rate,
@@ -479,7 +479,7 @@ impl Handler<MessageTick> for ValidatorActor {
                     .fold(String::new(), |a, b| a + b + "\n");
                 Broker::<SystemBroker>::issue_async(MessageSendMessageEvent {
                     height: self.last_height,
-                    event_type: ValidatorEventType::PRIVATE,
+                    event_type: SendMessageEventType::PRIVATE,
                     message: format!(
                         "Top {} - Average: {:0.8}\n{} ",
                         top_len, average_rate, top_msg
@@ -497,7 +497,7 @@ impl Handler<MessageTick> for ValidatorActor {
                     .fold(String::new(), |a, b| a + b + "\n");
                 Broker::<SystemBroker>::issue_async(MessageSendMessageEvent {
                     height: self.last_height,
-                    event_type: ValidatorEventType::PRIVATE,
+                    event_type: SendMessageEventType::PRIVATE,
                     message: format!(
                         "Bottom {} - Average: {:0.8}\n{} ",
                         bot_len, average_rate, bot_msg

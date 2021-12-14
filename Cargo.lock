@@ -617,7 +617,7 @@ dependencies = [
 
 [[package]]
 name = "constellation-discord"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "actix",
  "actix-broker",
@@ -625,7 +625,6 @@ dependencies = [
  "actor-discord",
  "anyhow",
  "chrono",
- "constellation-price-oracle",
  "constellation-shared",
  "futures",
  "log",
@@ -677,7 +676,7 @@ dependencies = [
  "serde",
  "serde_json",
  "terra-rust-api",
- "terra-rust-proto",
+ "terra-rust-proto 0.1.1 (git+https://github.com/PFC-Validator/terra.proto.git)",
  "thiserror",
  "tokio",
  "tokio-tungstenite 0.16.1",
@@ -685,8 +684,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-price-oracle"
-version = "0.1.1"
-source = "git+https://github.com/PFC-Validator/constellation-price-oracle.git#4e4b3d6084f56687ab5f7bf6706ffde3c5452ca2"
+version = "0.1.3"
+source = "git+https://github.com/PFC-Validator/constellation-price-oracle.git#3ad502973b0df3a806dbafe7927c6bca74f46782"
 dependencies = [
  "actix",
  "actix-broker",
@@ -695,7 +694,6 @@ dependencies = [
  "base64",
  "chrono",
  "constellation-shared",
- "constellation-web-socket",
  "futures",
  "log",
  "rust_decimal",
@@ -703,7 +701,7 @@ dependencies = [
  "serde",
  "serde_json",
  "terra-rust-api",
- "terra-rust-proto",
+ "terra-rust-proto 0.1.1 (git+https://github.com/PFC-Validator/terra.proto.git?tag=v0.1.1)",
  "thiserror",
  "tokio",
  "tokio-tungstenite 0.16.1",
@@ -731,17 +729,19 @@ dependencies = [
 
 [[package]]
 name = "constellation-shared"
-version = "0.3.1"
-source = "git+https://github.com/PFC-Validator/constellation-shared.git#f859704eed8b6dc3ead24444989f20330bc996a3"
+version = "0.3.7"
+source = "git+https://github.com/PFC-Validator/constellation-shared.git#164065027ecb68baf0a235dc8f9285e138ec26f7"
 dependencies = [
  "actix",
  "actix-broker",
  "anyhow",
  "chrono",
  "log",
+ "rust_decimal",
  "serde",
  "serde_json",
  "terra-rust-api",
+ "terra-rust-proto 0.1.1 (git+https://github.com/PFC-Validator/terra.proto.git?tag=v0.1.1)",
  "tokio",
 ]
 
@@ -766,7 +766,7 @@ dependencies = [
 
 [[package]]
 name = "constellation-validator"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "actix",
  "actix-broker",
@@ -774,9 +774,7 @@ dependencies = [
  "anyhow",
  "base64",
  "chrono",
- "constellation-price-oracle",
  "constellation-shared",
- "constellation-web-socket",
  "futures",
  "log",
  "rust_decimal",
@@ -810,8 +808,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-web-socket"
-version = "0.1.1"
-source = "git+https://github.com/PFC-Validator/constellation-web-socket.git#26a8c5684440ae0bbc78cefe3664738c12b7d8ca"
+version = "0.1.2"
+source = "git+https://github.com/PFC-Validator/constellation-web-socket.git#0af1e3ba92eac4374523afe1e92894b8ff5092da"
 dependencies = [
  "actix",
  "actix-broker",
@@ -830,7 +828,7 @@ dependencies = [
  "serde",
  "serde_json",
  "terra-rust-api",
- "terra-rust-proto",
+ "terra-rust-proto 0.1.1 (git+https://github.com/PFC-Validator/terra.proto.git?tag=v0.1.1)",
  "thiserror",
  "tokio",
  "tokio-tungstenite 0.16.1",
@@ -2662,8 +2660,17 @@ dependencies = [
 
 [[package]]
 name = "terra-rust-proto"
-version = "0.1.0"
-source = "git+https://github.com/PFC-Validator/terra.proto.git#cf791a751cffbcd28b5eddce5b51fc5c0a559590"
+version = "0.1.1"
+source = "git+https://github.com/PFC-Validator/terra.proto.git?tag=v0.1.1#4939cca497ba641046d18546dd234fd33a3f61c6"
+dependencies = [
+ "protobuf",
+ "protoc-rust",
+]
+
+[[package]]
+name = "terra-rust-proto"
+version = "0.1.1"
+source = "git+https://github.com/PFC-Validator/terra.proto.git#4939cca497ba641046d18546dd234fd33a3f61c6"
 dependencies = [
  "protobuf",
  "protoc-rust",

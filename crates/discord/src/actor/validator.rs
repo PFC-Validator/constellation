@@ -8,8 +8,8 @@ use actor_discord::types::events::{
 };
 use actor_discord::DiscordAPI;
 use chrono::{DateTime, Utc};
-use constellation_price_oracle::messages::{
-    MessageSendMessageEvent, MessageValidator, MessageValidatorEvent, ValidatorEventType,
+use constellation_shared::{
+    MessageSendMessageEvent, MessageValidator, MessageValidatorEvent, SendMessageEventType,
 };
 use std::collections::hash_map::Entry;
 
@@ -160,7 +160,7 @@ impl Handler<MessageValidatorEvent> for DiscordValidatorActor {
         });
         let announce = if self.announcement_channel.is_some() {
             match msg.event_type {
-                ValidatorEventType::WARN => {
+                SendMessageEventType::WARN => {
                     let warn_message = format!(
                         "WARN @{} {} {}",
                         height,
@@ -170,7 +170,7 @@ impl Handler<MessageValidatorEvent> for DiscordValidatorActor {
                     );
                     Some(MessageCreate::markdown(warn_message, &hash_url))
                 }
-                ValidatorEventType::ANNOUNCE => {
+                SendMessageEventType::ANNOUNCE => {
                     let warn_message = format!(
                         "{} {}",
                         height,
@@ -180,7 +180,7 @@ impl Handler<MessageValidatorEvent> for DiscordValidatorActor {
                     Some(MessageCreate::markdown(warn_message, &hash_url))
                 }
 
-                ValidatorEventType::ERROR => {
+                SendMessageEventType::ERROR => {
                     let err_message = format!(
                         "ERROR @{} {} {}",
                         height,
@@ -190,7 +190,7 @@ impl Handler<MessageValidatorEvent> for DiscordValidatorActor {
                     );
                     Some(MessageCreate::markdown(err_message, &hash_url))
                 }
-                ValidatorEventType::CRITICAL => {
+                SendMessageEventType::CRITICAL => {
                     let err_message = format!(
                         "CRITICAL @{} {} {}",
                         height,
@@ -228,7 +228,7 @@ impl Handler<MessageValidatorEvent> for DiscordValidatorActor {
                                 .await;
                         };
                         match message_type {
-                            ValidatorEventType::PRIVATE => {
+                            SendMessageEventType::PRIVATE => {
                                 if let Some(private) = private_channel {
                                     let msg_result =
                                         api.create_message(private.channel_id, message).await;
@@ -285,20 +285,20 @@ impl Handler<MessageSendMessageEvent> for DiscordValidatorActor {
         });
         let announce = if self.announcement_channel.is_some() {
             match msg.event_type {
-                ValidatorEventType::WARN => {
+                SendMessageEventType::WARN => {
                     let warn_message = format!("WARN @{} {}", height, &msg.message,);
                     Some(MessageCreate::markdown(warn_message, &hash_url))
                 }
-                ValidatorEventType::ANNOUNCE => {
+                SendMessageEventType::ANNOUNCE => {
                     let warn_message = format!("{} {}", height, &msg.message,);
                     Some(MessageCreate::markdown(warn_message, &hash_url))
                 }
 
-                ValidatorEventType::ERROR => {
+                SendMessageEventType::ERROR => {
                     let err_message = format!("ERROR @{} {}", height, &msg.message,);
                     Some(MessageCreate::markdown(err_message, &hash_url))
                 }
-                ValidatorEventType::CRITICAL => {
+                SendMessageEventType::CRITICAL => {
                     let err_message = format!("CRITICAL @{} {}", height, &msg.message,);
                     Some(MessageCreate::markdown(err_message, &hash_url))
                 }
@@ -325,7 +325,7 @@ impl Handler<MessageSendMessageEvent> for DiscordValidatorActor {
                             .create_message(announcement_channel.unwrap().channel_id, announce_msg)
                             .await;
                     };
-                    if let ValidatorEventType::PRIVATE = message_type {
+                    if let SendMessageEventType::PRIVATE = message_type {
                         if let Some(private) = private_channel {
                             let msg_result = api.create_message(private.channel_id, message).await;
                             match msg_result {
