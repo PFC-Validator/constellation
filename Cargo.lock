@@ -538,7 +538,7 @@ checksum = "f92cfa0fd5690b3cf8c1ef2cabbd9b7ef22fa53cf5e1f92b05103f6d5d1cf6e7"
 
 [[package]]
 name = "constellation"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "actix",
  "actix-broker",
@@ -657,8 +657,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-price-check"
-version = "0.1.0"
-source = "git+ssh://git@github.com/PFC-Validator/constellation-price-check.git#d5f1b07aca86b8caeeb243564ddb60d574233b0f"
+version = "0.1.1"
+source = "git+ssh://git@github.com/PFC-Validator/constellation-price-check.git#4f546a936fbbb18f73cc968fbb830c0e95f01048"
 dependencies = [
  "actix",
  "actix-broker",
@@ -666,9 +666,7 @@ dependencies = [
  "anyhow",
  "base64",
  "chrono",
- "constellation-price-oracle",
  "constellation-shared",
- "constellation-web-socket",
  "futures",
  "log",
  "rust_decimal",
@@ -676,7 +674,7 @@ dependencies = [
  "serde",
  "serde_json",
  "terra-rust-api",
- "terra-rust-proto 0.1.1 (git+https://github.com/PFC-Validator/terra.proto.git)",
+ "terra-rust-proto",
  "thiserror",
  "tokio",
  "tokio-tungstenite 0.16.1",
@@ -701,7 +699,7 @@ dependencies = [
  "serde",
  "serde_json",
  "terra-rust-api",
- "terra-rust-proto 0.1.1 (git+https://github.com/PFC-Validator/terra.proto.git?tag=v0.1.1)",
+ "terra-rust-proto",
  "thiserror",
  "tokio",
  "tokio-tungstenite 0.16.1",
@@ -741,7 +739,7 @@ dependencies = [
  "serde",
  "serde_json",
  "terra-rust-api",
- "terra-rust-proto 0.1.1 (git+https://github.com/PFC-Validator/terra.proto.git?tag=v0.1.1)",
+ "terra-rust-proto",
  "tokio",
 ]
 
@@ -828,7 +826,7 @@ dependencies = [
  "serde",
  "serde_json",
  "terra-rust-api",
- "terra-rust-proto 0.1.1 (git+https://github.com/PFC-Validator/terra.proto.git?tag=v0.1.1)",
+ "terra-rust-proto",
  "thiserror",
  "tokio",
  "tokio-tungstenite 0.16.1",
@@ -2626,9 +2624,9 @@ dependencies = [
 
 [[package]]
 name = "terra-rust-api"
-version = "1.1.1"
+version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66e669ff9f70214e17f84dc4460658754b9bbdf4a6eede0cc1b752daa2a9ecfd"
+checksum = "4163130c55e4129e2369504c68ae6551ec5a9d841642ef88df086b8ad6934bfb"
 dependencies = [
  "anyhow",
  "base64",
@@ -2662,15 +2660,6 @@ dependencies = [
 name = "terra-rust-proto"
 version = "0.1.1"
 source = "git+https://github.com/PFC-Validator/terra.proto.git?tag=v0.1.1#4939cca497ba641046d18546dd234fd33a3f61c6"
-dependencies = [
- "protobuf",
- "protoc-rust",
-]
-
-[[package]]
-name = "terra-rust-proto"
-version = "0.1.1"
-source = "git+https://github.com/PFC-Validator/terra.proto.git#4939cca497ba641046d18546dd234fd33a3f61c6"
 dependencies = [
  "protobuf",
  "protoc-rust",
