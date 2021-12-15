@@ -727,8 +727,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-shared"
-version = "0.3.7"
-source = "git+https://github.com/PFC-Validator/constellation-shared.git#164065027ecb68baf0a235dc8f9285e138ec26f7"
+version = "0.3.8"
+source = "git+https://github.com/PFC-Validator/constellation-shared.git#f2b78228801da92731e7ef5027b30fa1fc262866"
 dependencies = [
  "actix",
  "actix-broker",
@@ -806,8 +806,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-web-socket"
-version = "0.1.2"
-source = "git+https://github.com/PFC-Validator/constellation-web-socket.git#bd22f294f2c89e3e29eea91a7054d66f758ad84b"
+version = "0.1.3"
+source = "git+https://github.com/PFC-Validator/constellation-web-socket.git#380703a8f6282461d8e580af6f44f95a9dff10da"
 dependencies = [
  "actix",
  "actix-broker",
