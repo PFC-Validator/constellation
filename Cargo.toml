@@ -35,10 +35,10 @@ rust_decimal_macros = "1.15.0"
 httparse="1.5.1"
 terra-rust-api = {version ="1.1.2"}
 constellation-shared={ git ="https://github.com/PFC-Validator/constellation-shared.git", version = "0.3.8"}
-constellation-web-socket={ git = "https://github.com/PFC-Validator/constellation-web-socket.git", version = "0.1.3"}
-#constellation-web-socket={ path = "../constellation-web-socket", version = "0.1.3"}
+constellation-web-socket={ git = "https://github.com/PFC-Validator/constellation-web-socket.git", version = "0.1.4"}
+#constellation-web-socket={ path = "../constellation-web-socket", version = "0.1.4"}
 #
-constellation-price-oracle={ git = "https://github.com/PFC-Validator/constellation-price-oracle.git", version = "0.1.3"}
+constellation-price-oracle={ git = "https://github.com/PFC-Validator/constellation-price-oracle.git", version = "0.1.4"}
 
 #{path="../constellation-price-oracle", version = "0.1"}
 constellation-validator={ path = "./crates/validator", version = "0.1"}

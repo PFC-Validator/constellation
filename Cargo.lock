@@ -682,8 +682,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-price-oracle"
-version = "0.1.3"
-source = "git+https://github.com/PFC-Validator/constellation-price-oracle.git#3ad502973b0df3a806dbafe7927c6bca74f46782"
+version = "0.1.4"
+source = "git+https://github.com/PFC-Validator/constellation-price-oracle.git#c1470900194e606a4b75d44598bfc35dd1466967"
 dependencies = [
  "actix",
  "actix-broker",
@@ -727,8 +727,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-shared"
-version = "0.3.8"
-source = "git+https://github.com/PFC-Validator/constellation-shared.git#f2b78228801da92731e7ef5027b30fa1fc262866"
+version = "0.3.9"
+source = "git+https://github.com/PFC-Validator/constellation-shared.git#940e5dcb604d8acc456262212b74bcfc7b52486a"
 dependencies = [
  "actix",
  "actix-broker",
@@ -806,8 +806,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-web-socket"
-version = "0.1.3"
-source = "git+https://github.com/PFC-Validator/constellation-web-socket.git#380703a8f6282461d8e580af6f44f95a9dff10da"
+version = "0.1.4"
+source = "git+https://github.com/PFC-Validator/constellation-web-socket.git#66d6520c8f0e41e774fd2e793fe2202287f73c5d"
 dependencies = [
  "actix",
  "actix-broker",
@@ -2641,9 +2641,9 @@ dependencies = [
 
 [[package]]
 name = "terra-rust-api"
-version = "1.1.2"
+version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4163130c55e4129e2369504c68ae6551ec5a9d841642ef88df086b8ad6934bfb"
+checksum = "45dd05aa72d5751a94a4aeeb3c4cc4aba6b2f27c78dc606b602ba223e875bf27"
 dependencies = [
  "anyhow",
  "base64",
