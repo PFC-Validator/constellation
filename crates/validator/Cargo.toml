@@ -27,4 +27,4 @@ actix-broker = "0.4.1"
 chrono = "0.4.19"
 rust_decimal="1.15.0"
 
-constellation-shared={ git = "https://github.com/PFC-Validator/constellation-shared.git", version = "0.3.7"}
+constellation-shared={ git = "https://github.com/PFC-Validator/constellation-shared.git", version = "0.4"}

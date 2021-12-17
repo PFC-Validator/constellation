@@ -657,8 +657,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-price-check"
-version = "0.1.1"
-source = "git+ssh://git@github.com/PFC-Validator/constellation-price-check.git#4f546a936fbbb18f73cc968fbb830c0e95f01048"
+version = "0.1.2"
+source = "git+ssh://git@github.com/PFC-Validator/constellation-price-check.git#0306b466bbf53d447a3fb8dfe5861ac91ccaba29"
 dependencies = [
  "actix",
  "actix-broker",
@@ -682,8 +682,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-price-oracle"
-version = "0.1.4"
-source = "git+https://github.com/PFC-Validator/constellation-price-oracle.git#c1470900194e606a4b75d44598bfc35dd1466967"
+version = "0.1.5"
+source = "git+https://github.com/PFC-Validator/constellation-price-oracle.git#9d91c199c22339e81ce163ebf61f57581fa06223"
 dependencies = [
  "actix",
  "actix-broker",
@@ -727,8 +727,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-shared"
-version = "0.3.9"
-source = "git+https://github.com/PFC-Validator/constellation-shared.git#940e5dcb604d8acc456262212b74bcfc7b52486a"
+version = "0.4.0"
+source = "git+https://github.com/PFC-Validator/constellation-shared.git#4af9651baa71dad8fd4c74597b46e2cb1e525056"
 dependencies = [
  "actix",
  "actix-broker",
@@ -806,8 +806,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-web-socket"
-version = "0.1.4"
-source = "git+https://github.com/PFC-Validator/constellation-web-socket.git#66d6520c8f0e41e774fd2e793fe2202287f73c5d"
+version = "0.1.5"
+source = "git+https://github.com/PFC-Validator/constellation-web-socket.git#1090e67716e6979ae858fa86329056365abf1949"
 dependencies = [
  "actix",
  "actix-broker",
