@@ -113,6 +113,9 @@ struct Cli {
         help = "#retries for discord api, when we hit discord API caps"
     )]
     discord_retries: usize,
+
+    #[structopt(name = "clean-start", long, help = "clean start, delete state")]
+    clean: Option<bool>,
 }
 
 async fn run() -> anyhow::Result<()> {
@@ -136,17 +139,21 @@ async fn run() -> anyhow::Result<()> {
         log::info!("Module {} enabled", module)
     }
 
-    let state_data = match State::restore(&cli.state_file) {
-        Ok(versioned) => match versioned {
-            StateVersion::StateVersion1(state_v1) => state_v1,
-        },
-        Err(e) => {
-            log::info!(
-                "State file {} unable to be read. ({}) starting new",
-                cli.state_file,
-                e
-            );
-            State::new()?
+    let state_data = if cli.clean.unwrap_or(false) {
+        State::new()?
+    } else {
+        match State::restore(&cli.state_file) {
+            Ok(versioned) => match versioned {
+                StateVersion::StateVersion1(state_v1) => state_v1,
+            },
+            Err(e) => {
+                log::info!(
+                    "State file {} unable to be read. ({}) starting new",
+                    cli.state_file,
+                    e
+                );
+                State::new()?
+            }
         }
     };
     let state: AppState = Arc::new(Mutex::new(state_data));
@@ -193,12 +200,15 @@ async fn run() -> anyhow::Result<()> {
     }
     if modules.contains("all") || modules.contains("websocket") {
         tasks.push(actix_rt::spawn(constellation_web_socket::run(
-            state.clone(),
-            "ws://127.0.0.1:26657/websocket".into(),
+            cli.clean.unwrap_or(false),
+            cli.lcd_endpoint.clone(),
+            cli.chain_id.clone(),
+            cli.rpc_endpoint.clone(),
         )));
     }
     if modules.contains("all") || modules.contains("oracle") {
         let oracle_actor = constellation_price_oracle::actor::OracleActor::create(
+            cli.clean.unwrap_or(false),
             &cli.lcd_endpoint,
             &cli.chain_id,
         )
@@ -211,6 +221,7 @@ async fn run() -> anyhow::Result<()> {
         if modules.contains("all") || modules.contains("price") {
             log::info!("Starting private price check module");
             let price_actor = constellation_price_check::actor::PriceCheckActor::create(
+                cli.clean.unwrap_or(false),
                 &cli.lcd_endpoint,
                 &cli.chain_id,
             )
@@ -229,6 +240,7 @@ async fn run() -> anyhow::Result<()> {
             cli.lcd_endpoint.clone(),
         )));
         let validator_actor = constellation_validator::actor::ValidatorActor::create(
+            cli.clean.unwrap_or(false),
             &cli.lcd_endpoint,
             &cli.chain_id,
         )

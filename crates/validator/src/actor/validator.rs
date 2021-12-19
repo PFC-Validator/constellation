@@ -1,16 +1,13 @@
-use std::collections::HashMap;
-
 use actix::prelude::*;
 use actix_broker::{Broker, BrokerSubscribe, SystemBroker};
 use chrono::{DateTime, Timelike, Utc};
+use std::collections::HashMap;
+use terra_rust_api::client::client_types::{terra_datetime_format, terra_opt_datetime_format};
 //use rust_decimal::Decimal;
-use terra_rust_api::staking_types;
-use terra_rust_api::tendermint_types;
-use terra_rust_api::Terra;
-
 use crate::BrokerType;
 use constellation_shared::messages::{
     MessageBlockEventExchangeRate, MessageBlockEventLiveness, MessageBlockEventReward,
+    MessageBlockHeight,
 };
 use constellation_shared::messages::{
     MessagePriceAbstain, MessagePriceDrift, MessageSendMessageEvent, MessageValidator,
@@ -19,15 +16,20 @@ use constellation_shared::messages::{
 use constellation_shared::{MessageStop, MessageTick};
 use rust_decimal::prelude::FromPrimitive;
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Entry;
 use std::ops::{Div, Mul};
+use terra_rust_api::staking_types;
+use terra_rust_api::tendermint_types;
+use terra_rust_api::Terra;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ValidatorDetails {
     pub validator: staking_types::Validator,
     pub tendermint_account: Option<String>,
-
+    #[serde(with = "terra_datetime_format")]
     pub first_seen_date: DateTime<Utc>,
+    #[serde(with = "terra_datetime_format")]
     pub last_updated_date: DateTime<Utc>,
     pub first_seen_block: u64,
     pub last_updated_block: u64,
@@ -40,8 +42,10 @@ struct MergedValidatorLists {
     pub cons_pub: HashMap<String, String>,
     pub cons: HashMap<String, String>,
 }
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ValidatorActor {
     pub last_height: u64,
+    #[serde(with = "terra_opt_datetime_format")]
     pub last_tick: Option<DateTime<Utc>>,
     pub validators: HashMap<String, ValidatorDetails>,
     pub moniker: HashMap<String, String>,
@@ -54,45 +58,51 @@ pub struct ValidatorActor {
     pub chain: String,
 }
 impl ValidatorActor {
-    pub async fn create(lcd: &str, chain: &str) -> anyhow::Result<ValidatorActor> {
-        log::info!("Validator Actor starting up");
-        let terra = Terra::lcd_client_no_tx(lcd, chain);
-        match terra.staking().validators().await {
-            Ok(validator_result) => match terra.tendermint().validatorsets_full().await {
-                Ok(tendermint_result) => {
-                    log::info!(
-                        "Have validator/tendermint list kickstart v:{} t:{}",
-                        validator_result.result.len(),
-                        tendermint_result.result.validators.len()
-                    );
-                    let merged_validator_lists = ValidatorActor::from_validator_list(
-                        validator_result.height,
-                        validator_result.result,
-                        tendermint_result.result.validators,
-                    );
-                    Ok(ValidatorActor {
-                        last_height: 0,
-                        last_tick: None,
-                        validators: merged_validator_lists.validator_details,
-                        moniker: merged_validator_lists.monikers,
-                        cons_pub: merged_validator_lists.cons_pub,
-                        cons: merged_validator_lists.cons,
-                        rewards: Default::default(),
-                        rewards_cumulative: Default::default(),
-                        rates: Default::default(),
-                        lcd: lcd.into(),
-                        chain: chain.into(),
-                    })
-                }
+    pub async fn create(clean: bool, lcd: &str, chain: &str) -> anyhow::Result<ValidatorActor> {
+        if clean {
+            log::info!("Validator Actor starting up clean");
+            let terra = Terra::lcd_client_no_tx(lcd, chain);
+            match terra.staking().validators().await {
+                Ok(validator_result) => match terra.tendermint().validatorsets_full().await {
+                    Ok(tendermint_result) => {
+                        log::info!(
+                            "Have validator/tendermint list kickstart v:{} t:{}",
+                            validator_result.result.len(),
+                            tendermint_result.result.validators.len()
+                        );
+                        let merged_validator_lists = ValidatorActor::from_validator_list(
+                            validator_result.height,
+                            validator_result.result,
+                            tendermint_result.result.validators,
+                        );
+                        Ok(ValidatorActor {
+                            last_height: 0,
+                            last_tick: None,
+                            validators: merged_validator_lists.validator_details,
+                            moniker: merged_validator_lists.monikers,
+                            cons_pub: merged_validator_lists.cons_pub,
+                            cons: merged_validator_lists.cons,
+                            rewards: Default::default(),
+                            rewards_cumulative: Default::default(),
+                            rates: Default::default(),
+                            lcd: lcd.into(),
+                            chain: chain.into(),
+                        })
+                    }
+                    Err(e) => {
+                        log::error!("validator sets {}", e);
+                        Err(e)
+                    }
+                },
                 Err(e) => {
-                    log::error!("validator sets {}", e);
+                    log::error!("staking validators {}", e);
                     Err(e)
                 }
-            },
-            Err(e) => {
-                log::error!("staking validators {}", e);
-                Err(e)
             }
+        } else {
+            let va: ValidatorActor =
+                serde_json::from_reader(std::fs::File::open("validator.json")?)?;
+            Ok(va)
         }
     }
     fn from_validator_list(
@@ -154,6 +164,7 @@ impl Actor for ValidatorActor {
         self.subscribe_sync::<BrokerType, MessageBlockEventReward>(ctx);
         self.subscribe_sync::<BrokerType, MessageBlockEventExchangeRate>(ctx);
 
+        self.subscribe_sync::<BrokerType, MessageBlockHeight>(ctx);
         self.subscribe_sync::<BrokerType, MessageTick>(ctx);
         self.subscribe_sync::<BrokerType, MessageStop>(ctx);
     }
@@ -361,6 +372,13 @@ impl Handler<MessageBlockEventExchangeRate> for ValidatorActor {
         self.last_height = msg.height;
         //log::info!("Exchange rate {}/{}", msg.denom, msg.exchange_rate);
         self.rates.insert(msg.denom, msg.exchange_rate);
+    }
+}
+impl Handler<MessageBlockHeight> for ValidatorActor {
+    type Result = ();
+
+    fn handle(&mut self, _msg: MessageBlockHeight, _ctx: &mut Self::Context) {
+        serde_json::to_writer(std::fs::File::create("validator.json").unwrap(), &self).unwrap();
     }
 }
 impl Handler<MessageTick> for ValidatorActor {
