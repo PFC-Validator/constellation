@@ -1,0 +1,17 @@
+[Unit]
+Description=Constellation Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=user
+ExecStart=/mnt/disks/data/terrad/constellation/launch.sh
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+
+#[Service]
+#LimitNOFILE=65535
+
