@@ -432,6 +432,7 @@ impl Handler<MessageTick> for ValidatorActor {
                             validator_deets.validator.description.moniker, rewards.div(Decimal::from(1_000_000)), tokens.div(1_000_000), rate
                         );
                         validator_msg.insert(validator.0.clone(), message.clone());
+                        /*
                         Broker::<SystemBroker>::issue_async(MessageValidatorEvent {
                             height: self.last_height,
                             operator_address: validator.0.clone(),
@@ -440,6 +441,8 @@ impl Handler<MessageTick> for ValidatorActor {
                             message,
                             hash: None,
                         });
+
+                         */
                     } else {
                         log::warn!(
                             "Missing details for validator {} - rewards {}",

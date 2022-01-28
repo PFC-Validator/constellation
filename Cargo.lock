@@ -764,7 +764,7 @@ dependencies = [
 
 [[package]]
 name = "constellation-validator"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "actix",
  "actix-broker",
@@ -807,6 +807,7 @@ dependencies = [
 [[package]]
 name = "constellation-web-socket"
 version = "0.2.0"
+source = "git+https://github.com/PFC-Validator/constellation-web-socket.git#bae4af2eab5a6eb88b63fc86b58ebc0e17f03fbf"
 dependencies = [
  "actix",
  "actix-broker",
