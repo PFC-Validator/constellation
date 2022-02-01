@@ -13,7 +13,7 @@ rustls-tls = [ "tokio-tungstenite/tokio-rustls", "tokio-tungstenite/rustls"]
 
 [dependencies]
 tokio-tungstenite = { version = "0.15.0", features = ["tokio-native-tls", "native-tls"]} #, features = ["connect", "stream"], default-features = true }
-terra-rust-api = {version ="1.1.8"}
+terra-rust-api = {version ="1.2"}
 tokio = { version = "1.10", features = ["full"] }
 log = "0.4.14"
 anyhow = "1.0"
