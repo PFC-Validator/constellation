@@ -816,8 +816,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-web-socket"
-version = "0.2.1"
-source = "git+https://github.com/PFC-Validator/constellation-web-socket.git#7547879fe4a8b8d9e5458ab4ba1f5d4a4135184a"
+version = "0.2.2"
+source = "git+https://github.com/PFC-Validator/constellation-web-socket.git#7f47de8dd7cff486ea1cb5b00ed8289284f98ce9"
 dependencies = [
  "actix",
  "actix-broker",
@@ -2590,9 +2590,9 @@ dependencies = [
 
 [[package]]
 name = "terra-rust-api"
-version = "1.2.1"
+version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddb510f0ec2c7934cbcc286a1170ba14238034a0d4f4b38030ddf41ae49e9cd6"
+checksum = "23413ad841108e2255bb58d7efd8abb391660d1b3a2c37e26ab926bf09f57aee"
 dependencies = [
  "anyhow",
  "base64",
