@@ -653,6 +653,8 @@ dependencies = [
  "anyhow",
  "chrono",
  "constellation-shared",
+ "dotenv",
+ "env_logger",
  "futures",
  "log",
  "maxminddb",

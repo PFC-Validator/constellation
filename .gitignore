@@ -1,7 +1,8 @@
 /target
 /.idea
 /state.json
-/db/GeoLite2-City.mmdb
+/db/GeoLite2-City.mmdb*
+/crates/geo/resources/*.txt
 /*.json
 /output.txt
 /.env
