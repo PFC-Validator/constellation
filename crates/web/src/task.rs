@@ -35,7 +35,7 @@ pub async fn run(
             .app_data(state.clone())
             // enable logger
             .wrap(middleware::Logger::default())
-            .wrap(middleware::DefaultHeaders::new().header("X-Version", version_string))
+            .wrap(middleware::DefaultHeaders::new().add(("X-Version", version_string)))
             .service(web::resource("/").to(|| async { "Hello world!" }))
             .service(web::resource("/city").route(web::get().to(cities)))
             .service(web::resource("/city/{id:\\d+}").route(web::get().to(city_detail)))
