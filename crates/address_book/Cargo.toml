@@ -1,6 +1,6 @@
 [package]
 name = "constellation-address-book"
-version = "0.1.0"
+version = "0.5.1"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -24,4 +24,4 @@ chrono = "0.4.19"
 rust_decimal="1.15.0"
 
 terra-rust-api = {version ="1.2"}
-constellation-shared={ git="https://github.com/PFC-Validator/constellation-shared.git", version = "0.4"}
+constellation-shared={ git ="https://github.com/PFC-Validator/constellation-shared.git",  version = "0.5", branch="v0.5"}

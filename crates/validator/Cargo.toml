@@ -1,18 +1,18 @@
 [package]
 name = "constellation-validator"
-version = "0.1.8"
+version = "0.5.1"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 
-[features]
-default = ["native-tls"]
-native-tls = [ "tokio-tungstenite/tokio-native-tls","tokio-tungstenite/native-tls"]
-rustls-tls = [ "tokio-tungstenite/tokio-rustls", "tokio-tungstenite/rustls"]
+#[features]
+#default = ["native-tls"]
+#native-tls = [ "tokio-tungstenite/tokio-native-tls","tokio-tungstenite/native-tls"]
+#rustls-tls = [ "tokio-tungstenite/tokio-rustls", "tokio-tungstenite/rustls"]
 
 [dependencies]
-tokio-tungstenite = { version = "0.15.0", features = ["tokio-native-tls", "native-tls"]} #, features = ["connect", "stream"], default-features = true }
+#tokio-tungstenite = { version = "0.15.0", features = ["tokio-native-tls", "native-tls"]} #, features = ["connect", "stream"], default-features = true }
 terra-rust-api = {version ="1.2"}
 tokio = { version = "1.10", features = ["full"] }
 log = "0.4.14"
@@ -26,5 +26,4 @@ actix-rt="2.2.0"
 actix-broker = "0.4.1"
 chrono = "0.4.19"
 rust_decimal="1.15.0"
-
-constellation-shared={ git = "https://github.com/PFC-Validator/constellation-shared.git", version = "0.4"}
+constellation-shared={ git ="https://github.com/PFC-Validator/constellation-shared.git",  version = "0.5", branch="v0.5"}

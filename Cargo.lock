@@ -170,7 +170,7 @@ dependencies = [
  "http",
  "log",
  "pin-project-lite",
- "tokio-rustls 0.23.2",
+ "tokio-rustls",
  "tokio-util",
  "webpki-roots",
 ]
@@ -271,7 +271,7 @@ dependencies = [
  "serde_repr",
  "thiserror",
  "tokio",
- "tokio-tungstenite 0.16.1",
+ "tokio-tungstenite",
  "url",
 ]
 
@@ -393,7 +393,7 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "rand 0.8.4",
- "rustls 0.20.2",
+ "rustls",
  "serde",
  "serde_json",
  "serde_urlencoded",
@@ -546,7 +546,7 @@ dependencies = [
 
 [[package]]
 name = "constellation"
-version = "0.1.8"
+version = "0.5.1"
 dependencies = [
  "actix",
  "actix-broker",
@@ -585,7 +585,7 @@ dependencies = [
 
 [[package]]
 name = "constellation-address-book"
-version = "0.1.0"
+version = "0.5.1"
 dependencies = [
  "actix",
  "actix-broker",
@@ -605,7 +605,7 @@ dependencies = [
 
 [[package]]
 name = "constellation-bgp"
-version = "0.1.0"
+version = "0.5.1"
 dependencies = [
  "actix",
  "actix-broker",
@@ -625,7 +625,7 @@ dependencies = [
 
 [[package]]
 name = "constellation-discord"
-version = "0.1.2"
+version = "0.5.1"
 dependencies = [
  "actix",
  "actix-broker",
@@ -645,7 +645,7 @@ dependencies = [
 
 [[package]]
 name = "constellation-geo"
-version = "0.1.0"
+version = "0.5.1"
 dependencies = [
  "actix",
  "actix-broker",
@@ -667,8 +667,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-price-check"
-version = "0.1.3"
-source = "git+ssh://git@github.com/PFC-Validator/constellation-price-check.git#3d58c02b1d501ebbd609f111792023f52676c82b"
+version = "0.5.1"
+source = "git+ssh://git@github.com/PFC-Validator/constellation-price-check.git?branch=v0.5#d46a5ffd2134953d5bf802dde7ca8d20a9297766"
 dependencies = [
  "actix",
  "actix-broker",
@@ -684,16 +684,14 @@ dependencies = [
  "serde",
  "serde_json",
  "terra-rust-api",
- "terra-rust-proto",
  "thiserror",
  "tokio",
- "tokio-tungstenite 0.16.1",
 ]
 
 [[package]]
 name = "constellation-price-oracle"
-version = "0.1.6"
-source = "git+https://github.com/PFC-Validator/constellation-price-oracle.git#b6ea3b94123ed163881f57da1ab399cb1f43c65b"
+version = "0.5.1"
+source = "git+https://github.com/PFC-Validator/constellation-price-oracle.git?branch=v0.5#50cbda675473ef70d02c2dc2c20d82ff1a430f58"
 dependencies = [
  "actix",
  "actix-broker",
@@ -709,15 +707,13 @@ dependencies = [
  "serde",
  "serde_json",
  "terra-rust-api",
- "terra-rust-proto",
  "thiserror",
  "tokio",
- "tokio-tungstenite 0.16.1",
 ]
 
 [[package]]
 name = "constellation-rpc-crawler"
-version = "0.1.0"
+version = "0.5.1"
 dependencies = [
  "actix",
  "actix-broker",
@@ -737,8 +733,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-shared"
-version = "0.4.1"
-source = "git+https://github.com/PFC-Validator/constellation-shared.git#6458eb30e5553a9346ce20f7197df205ef69eae3"
+version = "0.5.1"
+source = "git+https://github.com/PFC-Validator/constellation-shared.git?branch=v0.5#ac69d4acbd213937aca31025a08c36be26709919"
 dependencies = [
  "actix",
  "actix-broker",
@@ -748,14 +744,14 @@ dependencies = [
  "rust_decimal",
  "serde",
  "serde_json",
+ "terra-proto",
  "terra-rust-api",
- "terra-rust-proto",
  "tokio",
 ]
 
 [[package]]
 name = "constellation-state-checkpoint"
-version = "0.1.0"
+version = "0.5.1"
 dependencies = [
  "actix",
  "actix-broker",
@@ -774,7 +770,7 @@ dependencies = [
 
 [[package]]
 name = "constellation-validator"
-version = "0.1.8"
+version = "0.5.1"
 dependencies = [
  "actix",
  "actix-broker",
@@ -790,12 +786,11 @@ dependencies = [
  "serde_json",
  "terra-rust-api",
  "tokio",
- "tokio-tungstenite 0.15.0",
 ]
 
 [[package]]
 name = "constellation-web"
-version = "0.1.0"
+version = "0.5.1"
 dependencies = [
  "actix",
  "actix-broker",
@@ -816,8 +811,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-web-socket"
-version = "0.2.2"
-source = "git+https://github.com/PFC-Validator/constellation-web-socket.git#7f47de8dd7cff486ea1cb5b00ed8289284f98ce9"
+version = "0.5.1"
+source = "git+https://github.com/PFC-Validator/constellation-web-socket.git?branch=v0.5#a720f6368c8e6196a0455da310a91ad18f259fd7"
 dependencies = [
  "actix",
  "actix-broker",
@@ -829,17 +824,17 @@ dependencies = [
  "futures",
  "hex",
  "log",
- "protobuf",
+ "prost",
  "rust-crypto",
  "rust_decimal",
  "rust_decimal_macros",
  "serde",
  "serde_json",
+ "terra-proto",
  "terra-rust-api",
- "terra-rust-proto",
  "thiserror",
  "tokio",
- "tokio-tungstenite 0.16.1",
+ "tokio-tungstenite",
 ]
 
 [[package]]
@@ -1412,9 +1407,9 @@ checksum = "d87c48c02e0dc5e3b849a2041db3029fd066650f8f717c07bf8ed78ccb895cac"
 dependencies = [
  "http",
  "hyper",
- "rustls 0.20.2",
+ "rustls",
  "tokio",
- "tokio-rustls 0.23.2",
+ "tokio-rustls",
 ]
 
 [[package]]
@@ -1477,6 +1472,15 @@ name = "ipnet"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68f2d64f2edebec4ce84ad108148e67e1064789bee435edc5b60ad398714a3a9"
+
+[[package]]
+name = "itertools"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9a9d19fa1e79b6215ff29b9d6880b706147f16e9b1dbb1e4e5947b5b02bc5e3"
+dependencies = [
+ "either",
+]
 
 [[package]]
 name = "itoa"
@@ -1814,26 +1818,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4fd5641d01c8f18a23da7b6fe29298ff4b55afcccdf78973b24cf3175fee32e"
 
 [[package]]
-name = "pin-project"
-version = "1.0.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58ad3879ad3baf4e44784bc6a718a8698867bb991f8ce24d1bcbe2cfb4c3a75e"
-dependencies = [
- "pin-project-internal",
-]
-
-[[package]]
-name = "pin-project-internal"
-version = "1.0.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "744b6f092ba29c3650faf274db506afd39944f48420f6c86b17cfe0ee1cb36bb"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "pin-project-lite"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1891,40 +1875,36 @@ dependencies = [
 ]
 
 [[package]]
-name = "protobuf"
-version = "2.27.1"
+name = "prost"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf7e6d18738ecd0902d30d1ad232c9125985a3422929b16c65517b38adc14f96"
-
-[[package]]
-name = "protobuf-codegen"
-version = "2.27.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aec1632b7c8f2e620343439a7dfd1f3c47b18906c4be58982079911482b5d707"
+checksum = "444879275cb4fd84958b1a1d5420d15e6fcf7c235fe47f053c9c2a80aceb6001"
 dependencies = [
- "protobuf",
+ "bytes",
+ "prost-derive",
 ]
 
 [[package]]
-name = "protoc"
-version = "2.27.1"
+name = "prost-derive"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2ef1dc036942fac2470fdb8a911f125404ee9129e9e807f3d12d8589001a38f"
+checksum = "f9cc1a3263e07e0bf68e96268f37665207b49560d98739662cdfaae215c720fe"
 dependencies = [
- "log",
- "which",
+ "anyhow",
+ "itertools",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
-name = "protoc-rust"
-version = "2.27.1"
+name = "prost-types"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a9e315121c8e7e21396e940a3d27f92280a6d28e3931213bf6cbfea76c5cc94"
+checksum = "534b7a0e836e3c482d2693070f982e39e7611da9695d4d1f5a4b186b51faef0a"
 dependencies = [
- "protobuf",
- "protobuf-codegen",
- "protoc",
- "tempfile",
+ "bytes",
+ "prost",
 ]
 
 [[package]]
@@ -2130,14 +2110,14 @@ dependencies = [
  "native-tls",
  "percent-encoding",
  "pin-project-lite",
- "rustls 0.20.2",
+ "rustls",
  "rustls-pemfile",
  "serde",
  "serde_json",
  "serde_urlencoded",
  "tokio",
  "tokio-native-tls",
- "tokio-rustls 0.23.2",
+ "tokio-rustls",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -2222,27 +2202,14 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.19.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35edb675feee39aec9c99fa5ff985081995a06d594114ae14cbe797ad7b7a6d7"
-dependencies = [
- "base64",
- "log",
- "ring",
- "sct 0.6.1",
- "webpki 0.21.4",
-]
-
-[[package]]
-name = "rustls"
 version = "0.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d37e5e2290f3e040b594b1a9e04377c2c671f1a1cfd9bfdef82106ac1c113f84"
 dependencies = [
  "log",
  "ring",
- "sct 0.7.0",
- "webpki 0.22.0",
+ "sct",
+ "webpki",
 ]
 
 [[package]]
@@ -2275,16 +2242,6 @@ name = "scopeguard"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
-
-[[package]]
-name = "sct"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b362b83898e0e69f38515b82ee15aa80636befe47c3b6d3d89a911e78fc228ce"
-dependencies = [
- "ring",
- "untrusted",
-]
 
 [[package]]
 name = "sct"
@@ -2589,6 +2546,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "terra-proto"
+version = "0.5.12-beta.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd11d2ed75d7997061d96177f5a68e6347c718c5bb4720a64c8e206e37ce8457"
+dependencies = [
+ "prost",
+ "prost-types",
+]
+
+[[package]]
 name = "terra-rust-api"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2620,15 +2587,6 @@ dependencies = [
  "subtle-encoding",
  "thiserror",
  "tokio",
-]
-
-[[package]]
-name = "terra-rust-proto"
-version = "0.1.1"
-source = "git+https://github.com/PFC-Validator/terra.proto.git?tag=v0.1.1#4939cca497ba641046d18546dd234fd33a3f61c6"
-dependencies = [
- "protobuf",
- "protoc-rust",
 ]
 
 [[package]]
@@ -2746,41 +2704,13 @@ dependencies = [
 
 [[package]]
 name = "tokio-rustls"
-version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc6844de72e57df1980054b38be3a9f4702aba4858be64dd700181a8a6d0e1b6"
-dependencies = [
- "rustls 0.19.1",
- "tokio",
- "webpki 0.21.4",
-]
-
-[[package]]
-name = "tokio-rustls"
 version = "0.23.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a27d5f2b839802bd8267fa19b0530f5a08b9c08cd417976be2a65d130fe1c11b"
 dependencies = [
- "rustls 0.20.2",
+ "rustls",
  "tokio",
- "webpki 0.22.0",
-]
-
-[[package]]
-name = "tokio-tungstenite"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "511de3f85caf1c98983545490c3d09685fa8eb634e57eec22bb4db271f46cbd8"
-dependencies = [
- "futures-util",
- "log",
- "native-tls",
- "pin-project",
- "rustls 0.19.1",
- "tokio",
- "tokio-native-tls",
- "tokio-rustls 0.22.0",
- "tungstenite 0.14.0",
+ "webpki",
 ]
 
 [[package]]
@@ -2792,12 +2722,12 @@ dependencies = [
  "futures-util",
  "log",
  "native-tls",
- "rustls 0.20.2",
+ "rustls",
  "tokio",
  "tokio-native-tls",
- "tokio-rustls 0.23.2",
- "tungstenite 0.16.0",
- "webpki 0.22.0",
+ "tokio-rustls",
+ "tungstenite",
+ "webpki",
  "webpki-roots",
 ]
 
@@ -2894,26 +2824,6 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 
 [[package]]
 name = "tungstenite"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0b2d8558abd2e276b0a8df5c05a2ec762609344191e5fd23e292c910e9165b5"
-dependencies = [
- "base64",
- "byteorder",
- "bytes",
- "http",
- "httparse",
- "log",
- "native-tls",
- "rand 0.8.4",
- "sha-1 0.9.8",
- "thiserror",
- "url",
- "utf-8",
-]
-
-[[package]]
-name = "tungstenite"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ad3713a14ae247f22a728a0456a545df14acf3867f905adff84be99e23b3ad1"
@@ -2926,12 +2836,12 @@ dependencies = [
  "log",
  "native-tls",
  "rand 0.8.4",
- "rustls 0.20.2",
+ "rustls",
  "sha-1 0.9.8",
  "thiserror",
  "url",
  "utf-8",
- "webpki 0.22.0",
+ "webpki",
 ]
 
 [[package]]
@@ -3115,16 +3025,6 @@ dependencies = [
 
 [[package]]
 name = "webpki"
-version = "0.21.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8e38c0608262c46d4a56202ebabdeb094cef7e560ca7a226c6bf055188aa4ea"
-dependencies = [
- "ring",
- "untrusted",
-]
-
-[[package]]
-name = "webpki"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f095d78192e208183081cc07bc5515ef55216397af48b873e5edcd72637fa1bd"
@@ -3139,18 +3039,7 @@ version = "0.22.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "552ceb903e957524388c4d3475725ff2c8b7960922063af6ce53c9a43da07449"
 dependencies = [
- "webpki 0.22.0",
-]
-
-[[package]]
-name = "which"
-version = "4.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a5a7e487e921cf220206864a94a89b6c6905bfc19f1057fa26a4cb360e5c1d2"
-dependencies = [
- "either",
- "lazy_static",
- "libc",
+ "webpki",
 ]
 
 [[package]]
