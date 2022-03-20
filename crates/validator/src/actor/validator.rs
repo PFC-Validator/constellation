@@ -96,7 +96,7 @@ impl ValidatorActor {
                 },
                 Err(e) => {
                     log::error!("staking validators {}", e);
-                    Err(e)
+                    Err(e.into())
                 }
             }
         } else {
