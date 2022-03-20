@@ -408,15 +408,15 @@ checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
 
 [[package]]
 name = "bech32"
-version = "0.7.3"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2dabbe35f96fb9507f7330793dc490461b2962659ac5d427181e451a623751d1"
+checksum = "cf9ff0bbfd639f15c74af777d81383cf53efb7c93613f6cab67c6c11e05bbf8b"
 
 [[package]]
 name = "bitcoin"
-version = "0.26.2"
+version = "0.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6742ec672d3f12506f4ac5c0d853926ff1f94e675f60ffd3224039972bf663f1"
+checksum = "9a41df6ad9642c5c15ae312dd3d074de38fd3eb7cc87ad4ce10f90292a83fe4d"
 dependencies = [
  "bech32",
  "bitcoin_hashes",
@@ -425,9 +425,9 @@ dependencies = [
 
 [[package]]
 name = "bitcoin_hashes"
-version = "0.9.7"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ce18265ec2324ad075345d5814fbeed4f41f0a660055dc78840b74d19b874b1"
+checksum = "006cc91e1a1d99819bc5b8214be3555c1f0611b169f527a1fdc54ed1f2b745b0"
 
 [[package]]
 name = "bitflags"
@@ -811,8 +811,8 @@ dependencies = [
 
 [[package]]
 name = "constellation-web-socket"
-version = "0.5.1"
-source = "git+https://github.com/PFC-Validator/constellation-web-socket.git?branch=v0.5#a720f6368c8e6196a0455da310a91ad18f259fd7"
+version = "0.5.2"
+source = "git+https://github.com/PFC-Validator/constellation-web-socket.git?branch=v0.5#a0e83b041c216f169341dc08395bd8b93612b21c"
 dependencies = [
  "actix",
  "actix-broker",
@@ -2557,9 +2557,9 @@ dependencies = [
 
 [[package]]
 name = "terra-rust-api"
-version = "1.2.2"
+version = "1.2.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23413ad841108e2255bb58d7efd8abb391660d1b3a2c37e26ab926bf09f57aee"
+checksum = "333881a59831525bc020ef10fc56018d998bfde78b0e4d15e193193caa795da6"
 dependencies = [
  "anyhow",
  "base64",
@@ -2580,7 +2580,6 @@ dependencies = [
  "rust-crypto",
  "rust_decimal",
  "rust_decimal_macros",
- "rustc-serialize",
  "secp256k1",
  "serde",
  "serde_json",
