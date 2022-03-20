@@ -770,7 +770,7 @@ dependencies = [
 
 [[package]]
 name = "constellation-validator"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "actix",
  "actix-broker",
